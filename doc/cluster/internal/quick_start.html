@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>快速入门 &mdash; PaddlePaddle  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PaddlePaddle  documentation" href="../../index.html" />
+    <link rel="up" title="PaddlePaddle新平台" href="index.html" />
+    <link rel="next" title="客户端教程" href="client_tutorial.html" />
+    <link rel="prev" title="客户端安装" href="install.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="客户端教程"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="客户端安装"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="">
+<span id="id1"></span><h1>快速入门<a class="headerlink" href="#" title="Permalink to this headline">¶</a></h1>
+<p>下面通过MNIST和AlexNet多机训练的例子来展示新平台的最基本使用方法。</p>
+<div class="section" id="mnist">
+<span id="mnist"></span><h2>MNIST<a class="headerlink" href="#mnist" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">准备配置文件<code class="docutils literal"><span class="pre">$PADDLE_PLATFORM/test/mnist/mnist_cluster_job.py</span></code></p>
+<ul class="simple">
+<li>配置集群相关的参数</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">cluster_config</span><span class="p">(</span>
+    <span class="n">fs_name</span> <span class="o">=</span> <span class="s2">&quot;hdfs://nmg01-mulan-hdfs.dmop.baidu.com:54310&quot;</span><span class="p">,</span>
+    <span class="n">fs_ugi</span> <span class="o">=</span> <span class="s2">&quot;paddle_demo,paddle_demo&quot;</span><span class="p">,</span>
+    <span class="n">work_dir</span> <span class="o">=</span><span class="s2">&quot;/app/idl/idl-dl/paddle/cluster_test/mnist/&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">cluster_config</span></code>配置了HADOOP集群的文件系统名称<code class="docutils literal"><span class="pre">fs_name</span></code>，<code class="docutils literal"><span class="pre">ugi</span></code>，以及数据集模型存放的父目录<code class="docutils literal"><span class="pre">work_dir</span></code>。训练数据的路径为<code class="docutils literal"><span class="pre">$work_dir/train_data</span></code>，测试数据的路径为<code class="docutils literal"><span class="pre">$work_dir/test_data</span></code>，模型输出的路径为<code class="docutils literal"><span class="pre">$work_dir/output_时间戳</span></code>。更详细的介绍见<a class="reference external" href="cluster/cluster_config.html#config-file">集群配置文件</a>。</p>
+<ul class="simple">
+<li>配置训练数据、优化算法、以及网络结构：</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot; 数据配置 &quot;&quot;&quot;</span>
+<span class="n">TrainData</span><span class="p">(</span><span class="n">ProtoData</span><span class="p">(</span><span class="n">files</span> <span class="o">=</span> <span class="s2">&quot;train.list&quot;</span><span class="p">))</span>
+
+<span class="sd">&quot;&quot;&quot; 算法配置 &quot;&quot;&quot;</span>
+<span class="n">settings</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+         <span class="n">learning_method</span><span class="o">=</span><span class="n">AdamOptimizer</span><span class="p">(),</span>
+         <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+         
+<span class="sd">&quot;&quot;&quot; 网络结构 &quot;&quot;&quot;</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">data_layer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">784</span><span class="p">)</span>
+<span class="n">hidden</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+<span class="n">hidden</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">hidden</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="n">SoftmaxActivation</span><span class="p">())</span>
+<span class="n">outputs</span><span class="p">(</span><span class="n">classification_cost</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">prediction</span><span class="p">,</span>
+                            <span class="n">label</span><span class="o">=</span><span class="n">data_layer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>平台在训练过程中会定时使用测试集对最新模型进行评估, 通常情况下建议开启测试以实时观察模型在测试集上的表现。只需将测试数据放置在<code class="docutils literal"><span class="pre">$work_dir/test</span></code>下，并在<code class="docutils literal"><span class="pre">TrainData(ProtoData(files=XXX))</span></code>函数中指定<code class="docutils literal"><span class="pre">test.list</span></code>,例如在本例中, 测试数据已放置在正确位置，修改mnist_cluster_job.py：</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot; 数据配置 &quot;&quot;&quot;</span>
+<span class="n">TrainData</span><span class="p">(</span><span class="n">ProtoData</span><span class="p">(</span><span class="n">files</span> <span class="o">=</span> <span class="s2">&quot;train.list&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">提交任务</p>
+</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>python cluster_train <span class="se">\</span>
+  --config test/mnist/mnist_cluster_job.py <span class="se">\</span>
+  --use_gpu gpu <span class="se">\</span>
+  --time_limit 00:30:00 <span class="se">\</span>
+  --submitter wangyanfei01 <span class="se">\</span>
+  --num_nodes <span class="m">2</span> <span class="se">\</span>
+  --job_priority normal <span class="se">\</span>
+  --trainer_count <span class="m">4</span> <span class="se">\</span>
+  --num_passes <span class="m">1</span> <span class="se">\</span>
+  --log_period <span class="m">1000</span> <span class="se">\</span>
+  --dot_period <span class="m">100</span> <span class="se">\</span>
+  --saving_period <span class="m">1</span> <span class="se">\</span>
+  --where nmg01-idl-dl-cpu-10G_cluster <span class="se">\</span>
+  --job_name paddle_cluster_demo_v5
+</pre></div>
+</div>
+<p>任务提交的选项已经写入<code class="docutils literal"><span class="pre">$PADDLE_PLATFORM/run_mnist.sh</span></code>中，可以直接运行：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">cd</span> <span class="nv">$PADDLE_PLATFORM</span>
+./run_mnist.sh
+</pre></div>
+</div>
+<p>详细解释请参阅<a class="reference external" href="#command-options">客户端命令行选项</a>。</p>
+<ul class="simple">
+<li>查看任务</li>
+</ul>
+<p>运行提交脚本后，客户端会打印提交信息，其中包含任务的id和任务链接。在本例中，用户将看到形如<code class="docutils literal"><span class="pre">127445.nmg01-hpc-imaster01.nmg01.baidu.com</span></code>的任务id和形如<code class="docutils literal"><span class="pre">http://nmg01-hpc-controller.nmg01.baidu.com:8090/job/i-127445</span></code>的任务链接URL。打开这个页面，可以查看任务的运行状态和详细的运行日志，训练过程的日志存放在<strong>第一个</strong>训练节点的<code class="docutils literal"><span class="pre">workspace/log</span></code>路径下，通过<code class="docutils literal"><span class="pre">paddle_trainer.INFO</span></code>可以查看训练过程中的各个指标的变化情况。</p>
+<ul class="simple">
+<li>查看模型</li>
+</ul>
+<p>在本例中，模型在训练结束后会保存在<code class="docutils literal"><span class="pre">$fs_name/$work_dir/output_时间戳/output/rank-00000</span></code>下，包含了每个pass输出的模型。</p>
+<ul class="simple">
+<li>杀死任务</li>
+</ul>
+<p>如果在任务的运行过程中想杀死任务，可以使用客户端的<code class="docutils literal"><span class="pre">cluster_kill</span></code>子命令，在本例中：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>paddle cluster_kill qdel 127445.nmg01-hpc-imaster01.nmg01.baidu.com
+</pre></div>
+</div>
+<p>请注意不同的集群杀死任务的命令各有不同，通常在提交任务后客户端打印的提交信息中都包含了杀死任务的命令，只需要用<code class="docutils literal"><span class="pre">cluster_kill</span></code>选项将其传给客户端即可。</p>
+</div>
+<div class="section" id="alexnet">
+<span id="alexnet"></span><h2>AlexNet<a class="headerlink" href="#alexnet" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">准备配置文件<code class="docutils literal"><span class="pre">$PADDLE_PLATFORM/test/alexnet/alexnet_cluster_job.py</span></code></p>
+<ul class="simple">
+<li>配置集群相关的参数</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">cluster_config</span><span class="p">(</span>
+        <span class="n">fs_name</span><span class="o">=</span><span class="s2">&quot;hdfs://nmg01-mulan-hdfs.dmop.baidu.com:54310&quot;</span><span class="p">,</span>
+        <span class="n">fs_ugi</span><span class="o">=</span><span class="s2">&quot;paddle_demo,paddle_demo&quot;</span><span class="p">,</span>
+        <span class="n">work_dir</span><span class="o">=</span><span class="s2">&quot;/app/idl/idl-dl/paddle/cluster_test/alexnet&quot;</span><span class="p">,</span>
+        <span class="n">has_meta_data</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>配置训练和测试数据：</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">define_py_data_sources</span><span class="p">(</span><span class="s1">&#39;train.list&#39;</span><span class="p">,</span> <span class="s1">&#39;test.list&#39;</span><span class="p">,</span>
+                       <span class="n">module</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pyDataProviderImage&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;pyDataProviderImage_test&#39;</span><span class="p">],</span>
+                       <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;GeneralJpegDataProvider&#39;</span><span class="p">,</span>
+                       <span class="n">args</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;train.meta.list&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;test.meta.list&#39;</span><span class="p">],</span>
+                       <span class="n">train_async</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+         
+<span class="n">img</span> <span class="o">=</span> <span class="n">data_layer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">224</span> <span class="o">*</span> <span class="mi">224</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>在配置训练和测试数据时，需要用到<code class="docutils literal"><span class="pre">pyDataProviderImage</span></code>，<code class="docutils literal"><span class="pre">GeneralJpegDataProvider</span></code>，<code class="docutils literal"><span class="pre">pyDataProviderImage_test</span></code>这几个<code class="docutils literal"><span class="pre">DataProvider</span></code>，它们的实现需要用户通过客户端指定<code class="docutils literal"><span class="pre">--thirdparty</span></code>来传给trainer。</p>
+<ul class="simple">
+<li>配置优化算法和网络结构：</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">settings</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span>
+         <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+         <span class="n">learning_method</span><span class="o">=</span><span class="n">AdamOptimizer</span><span class="p">())</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_conv_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">filter_size</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">num_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_filters</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_cmrnorm_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.0048</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_pool_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">pool_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_conv_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">filter_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">num_filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_cmrnorm_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.0128</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_pool_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">pool_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_conv_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">filter_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_filters</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_conv_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">filter_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_filters</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_conv_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">filter_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_filters</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+                     <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">img_pool_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">pool_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="n">ReluActivation</span><span class="p">())</span>
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="n">ReluActivation</span><span class="p">())</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">fc_layer</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">act</span><span class="o">=</span><span class="n">SoftmaxActivation</span><span class="p">())</span>
+
+<span class="n">classification_cost</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">prediction</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="n">data_layer</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;cost&#39;</span><span class="p">)</span>
+<span class="n">Inputs</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">)</span>
+<span class="n">Outputs</span><span class="p">(</span><span class="s1">&#39;cost&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">paddle.trainer_config_helpers</span></code>模块提供了众多helper来简化模型网络的描述，在使用这些helper之前请先通过<code class="docutils literal"><span class="pre">from</span> <span class="pre">paddle.trainer_config_helpers</span> <span class="pre">import</span> <span class="pre">*</span></code>来引入该模块。
+注意到配置文件中用到了一些第三方依赖，主要是一些data provider，以及它们调用的一些动态链接库，用来处理图像的输入，所以需要将这些依赖的代码和文件以第三方依赖的形式提交，并通过客户端<code class="docutils literal"><span class="pre">--thirdparty</span></code>选项指定。</p>
+<p>AlexNet用到的thirdparty包含如下内容：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="p">|</span>-- before_hook.sh
+<span class="p">|</span>-- decodeJPEG
+<span class="p">|</span>-- jpeg
+<span class="p">|</span>-- pyDataProviderImage.py
+<span class="sb">`</span>-- pyDataProviderImage_test.py
+</pre></div>
+</div>
+<p>这个例子中需要使用before_hook.sh将依赖文件从thirdparty中拷贝到当前训练节点的workspace目录下，所以所有的依赖文件都需要放入名称为<code class="docutils literal"><span class="pre">thirdparty</span></code>的目录下。</p>
+</li>
+<li><p class="first">提交任务：</p>
+</li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">cluster_train</span> \
+  <span class="o">--</span><span class="n">config</span> <span class="n">test</span><span class="o">/</span><span class="n">alexnet</span><span class="o">/</span><span class="n">job_config</span><span class="o">/</span><span class="n">alexnet_cluster_job</span><span class="o">.</span><span class="n">py</span> \
+  <span class="o">--</span><span class="n">use_gpu</span> <span class="n">gpu</span> \
+  <span class="o">--</span><span class="n">time_limit</span> <span class="mo">00</span><span class="p">:</span><span class="mo">05</span><span class="p">:</span><span class="mo">00</span> \
+  <span class="o">--</span><span class="n">submitter</span> <span class="n">liuyuan04</span> \
+  <span class="o">--</span><span class="n">num_nodes</span> <span class="mi">1</span> \
+  <span class="o">--</span><span class="n">job_priority</span> <span class="n">normal</span> \
+  <span class="o">--</span><span class="n">trainer_count</span> <span class="mi">4</span> \
+  <span class="o">--</span><span class="n">num_passes</span> <span class="mi">1</span> \
+  <span class="o">--</span><span class="n">log_period</span> <span class="mi">100</span> \
+  <span class="o">--</span><span class="n">dot_period</span> <span class="mi">10</span> \
+  <span class="o">--</span><span class="n">saving_period</span> <span class="mi">1</span> \
+  <span class="o">--</span><span class="n">where</span> <span class="n">cp01</span><span class="o">-</span><span class="n">idl</span><span class="o">-</span><span class="n">dl</span><span class="o">-</span><span class="n">gpu</span><span class="o">-</span><span class="mi">56</span><span class="n">G_cluster</span> \
+  <span class="o">--</span><span class="n">job_name</span> <span class="n">paddle_cluster_test_alexnet_v5</span> \
+  <span class="o">--</span><span class="n">thirdparty</span> <span class="n">test</span><span class="o">/</span><span class="n">alexnet</span><span class="o">/</span><span class="n">thirdparty</span>
+</pre></div>
+</div>
+<p>当前版本中已经包含了上述示例的所有代码，放置在<code class="docutils literal"><span class="pre">$PADDLE_PLATFORM/test/alexnet</span></code>下，通过<code class="docutils literal"><span class="pre">$PADDLE_PLATFORM/run_alex.sh</span></code>即可提交。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">快速入门</a><ul>
+<li><a class="reference internal" href="#mnist">MNIST</a></li>
+<li><a class="reference internal" href="#alexnet">AlexNet</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="previous chapter">客户端安装</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="client_tutorial.html"
+                        title="next chapter">客户端教程</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/cluster/internal/quick_start.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="客户端教程"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="客户端安装"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, PaddlePaddle developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+    </div>
+  </body>
+</html>

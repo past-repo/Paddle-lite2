@@ -1,0 +1,258 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>使用CMake编译PaddlePaddle源码 &mdash; PADDLE  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PADDLE  documentation" href="../../index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PADDLE  documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cmakepaddlepaddle">
+<h1><a class="toc-backref" href="#id8">使用CMake编译PaddlePaddle源码</a><a class="headerlink" href="#cmakepaddlepaddle" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="id1">
+<p class="topic-title first">目录</p>
+<ul class="simple">
+<li><a class="reference internal" href="#cmakepaddlepaddle" id="id8">使用CMake编译PaddlePaddle源码</a><ul>
+<li><a class="reference internal" href="#id2" id="id9">下载编译依赖</a><ul>
+<li><a class="reference internal" href="#jumbo" id="id10">Jumbo 下载编译依赖</a><ul>
+<li><a class="reference internal" href="#id3" id="id11">安装 Jumbo</a></li>
+<li><a class="reference internal" href="#id4" id="id12">执行PaddlePaddle编译依赖安装脚本</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#svn" id="id13">百度SVN下载编译依赖</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#makefile" id="id14">设置编译选项，生成Makefile</a><ul>
+<li><a class="reference internal" href="#id5" id="id15">选择编译路径</a></li>
+<li><a class="reference internal" href="#cmakegcc" id="id16">设置CMake编译选项和GCC路径</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6" id="id17">编译Makefile，安装</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>PaddlePaddle支持COMAKE和cmake两种方式编译。由于comake本身在公司并不继续维护，
+并且comake并不适合PaddlePaddle对外开放使用，所以PaddlePaddle目前优先支持cmake编译
+comake编译目前
+进入 <strong>deprecated</strong> 状态，并会在未来的数月内删除。</p>
+<p>CMake编译的方法主要分为一下几个步骤执行:</p>
+<ul class="simple">
+<li>下载编译依赖</li>
+<li>设置编译选项，生成Makefile</li>
+<li>编译Makefile，安装</li>
+</ul>
+<p>用户可以选择左侧的目录跳着阅读感兴趣的模块。对于CMake并不了解的同学，可以参考文档
+<a class="reference external" href="https://cmake.org/cmake-tutorial/">cmake简介</a></p>
+<p>在编译之前，请 <a class="reference external" href="./download_paddle_source_zh_cn.html">下载PaddlePaddle源码</a></p>
+<div class="section" id="id2">
+<h2><a class="toc-backref" href="#id9">下载编译依赖</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>下载编译依赖目前可以使用 <a class="reference external" href="http://jumbo.baidu.com/">Jumbo</a> 和百度SVN下载。下面的方式二选一即可</p>
+<div class="section" id="jumbo">
+<h3><a class="reference external" href="http://jumbo.baidu.com/">Jumbo</a> 下载编译依赖<a class="headerlink" href="#jumbo" title="Permalink to this headline">¶</a></h3>
+<p>使用 <a class="reference external" href="http://jumbo.baidu.com/">Jumbo</a> 下载PaddlePaddle的依赖非常简单。分为:</p>
+<ul class="simple">
+<li>安装 <a class="reference external" href="http://jumbo.baidu.com/">Jumbo</a> 。</li>
+<li>执行PaddlePaddle编译依赖安装脚本。</li>
+</ul>
+<div class="section" id="id3">
+<h4>安装 <a class="reference external" href="http://jumbo.baidu.com/">Jumbo</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>bash -c <span class="s2">&quot;</span><span class="k">$(</span> curl http://jumbo.baidu.com/install_jumbo.sh <span class="k">)</span><span class="s2">&quot;</span>
+<span class="nb">source</span> ~/.bashrc
+</pre></div>
+</div>
+<p>然后执行</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>jumbo
+</pre></div>
+</div>
+<p>即可以检测jumbo是否安装完成。</p>
+</div>
+<div class="section" id="id4">
+<h4><a class="toc-backref" href="#id12">执行PaddlePaddle编译依赖安装脚本</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h4>
+<p>执行目录 <code class="code docutils literal"><span class="pre">paddle/internals/scripts/build_scripts/install_deps.jumbo.sh</span></code> 这个shell脚本。即可完成PaddlePaddle编译环境的依赖安装。 脚本内容如下:</p>
+<p>其中使用jumbo安装了 <code class="code docutils literal"><span class="pre">protobuf</span></code>, <code class="code docutils literal"><span class="pre">gflags</span></code>, <code class="code docutils literal"><span class="pre">glogs</span></code> 等PaddlePaddle需要使用的C++库，和若干PaddlePaddle需要使用的python库。</p>
+</div>
+</div>
+<div class="section" id="svn">
+<h3><a class="toc-backref" href="#id13">百度SVN下载编译依赖</a><a class="headerlink" href="#svn" title="Permalink to this headline">¶</a></h3>
+<p>To Be Defined</p>
+</div>
+</div>
+<div class="section" id="makefile">
+<h2><a class="toc-backref" href="#id14">设置编译选项，生成Makefile</a><a class="headerlink" href="#makefile" title="Permalink to this headline">¶</a></h2>
+<p>这一步分为以下几个步骤:</p>
+<ul class="simple">
+<li>选择编译路径</li>
+<li>设置CMake编译选项</li>
+</ul>
+<div class="section" id="id5">
+<h3><a class="toc-backref" href="#id15">选择编译路径</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>理论上CMake可以使用任何路径作为编译路径，为了接下来教程写起来更方便，这里指定 <code class="code docutils literal"><span class="pre">YOUR_CODE_CHECKOUT_DIR/build</span></code> 为编译路径。 执行如下命令，创建编译路径:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">cd</span> YOUR_CODE_CHECKOUT_DIR  <span class="c1"># 修改成代码下载地址！</span>
+mkdir -p build
+<span class="nb">cd</span> build
+</pre></div>
+</div>
+</div>
+<div class="section" id="cmakegcc">
+<h3><a class="toc-backref" href="#id16">设置CMake编译选项和GCC路径</a><a class="headerlink" href="#cmakegcc" title="Permalink to this headline">¶</a></h3>
+<p>编译PaddlePaddle需要使用至少gcc 4.6版本的c++。gcc 4.6到gcc 4.9测试过均可编译。gcc 5+没有经过测试。</p>
+<p>使用公司统一部署的gcc482，需要修改PATH，执行</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span>/opt/compiler/gcc-4.8.2/bin/:<span class="nv">$PATH</span>
+</pre></div>
+</div>
+<p>如果使用jumbo里的gcc46，则需要修改PATH，执行</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="si">${</span><span class="nv">JUMBO_ROOT</span><span class="si">}</span>/opt/gcc46/bin:<span class="nv">$PATH</span>
+</pre></div>
+</div>
+<p>设置CMake编译选项有两个方式。直接执行 <code class="code docutils literal"><span class="pre">cmake</span></code> 命令或者使用cmake命令的图形化界面 <code class="code docutils literal"><span class="pre">ccmake</span></code>。使用 <code class="code docutils literal"><span class="pre">-D</span></code> 可以将设置传递给 <code class="code docutils literal"><span class="pre">cmake</span></code>.</p>
+<p>目前常用的CMake编译选项包括, 如果不设置这些编译选项，PaddlePaddle会选择一个比较好的默认值(例如在GPU的机器上开启GPU编译)</p>
+<div class="code cmake highlight-python"><div class="highlight"><pre><span></span>sphinx_add_target(paddle_docs_cn
+                  html
+                  ${BINARY_BUILD_DIR}
+                  ${SPHINX_CACHE_DIR}
+                  ${CMAKE_CURRENT_SOURCE_DIR}
+                  ${SPHINX_HTML_DIR})
+
+add_dependencies(paddle_docs_cn
+  gen_proto_py)
+</pre></div>
+</div>
+<p>同时，CMake的一些常用的搜索路径和其他设置包括:</p>
+<ul class="simple">
+<li>CUDNN_ROOT。 CUDNN的搜索路径。需要设置成jumbo下载后的结果。</li>
+<li>CMAKE_INSTALL_PREFIX。编译后的安装路径。</li>
+<li>CMAKE_BUILD_TYPE。 是否Debug编译。包括 Debug, Release, RelWithDebInfo, MinSizeRel。</li>
+</ul>
+<p>一个典型的CMake编译选项设置调用如下:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>cmake -DCMAKE_INSTALL_PREFIX<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">JUMBO_ROOT</span><span class="si">}</span><span class="s2">&quot;</span> <span class="se">\</span>
+    -DCMAKE_BUILD_TYPE<span class="o">=</span>RelWithDebInfo <span class="se">\</span>
+    -DCUDNN_ROOT<span class="o">=</span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">JUMBO_ROOT</span><span class="si">}</span><span class="s2">/opt/cudnn/&quot;</span> <span class="se">\</span>
+    -DWITH_SWIG_PY<span class="o">=</span>ON ..
+</pre></div>
+</div>
+<p>执行完上述代码后，如果正常退出没有报错，CMake配置完毕，已经生成了Makefile。</p>
+</div>
+</div>
+<div class="section" id="id6">
+<h2><a class="toc-backref" href="#id17">编译Makefile，安装</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<p>执行编译命令:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>make &gt;/dev/null
+</pre></div>
+</div>
+<p>如果用户如果不关注编译过程，可以将stdout重定向到:code:<cite>/dev/null</cite>。</p>
+<p>编译正确以后，可以执行单元测试，验证PaddlePaddle运行正确(可选项)。</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/home/test_jumbo/.jumbo/opt/  <span class="c1"># 添加CUDNN到$LD_LIBRARY_PATH中</span>
+make <span class="nb">test</span>
+</pre></div>
+</div>
+<p>如果单元测试完全正确了，即可以安装PaddlePaddle。执行</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>make install
+</pre></div>
+</div>
+<p>注意：运行PaddlePaddle的各项命令之前，需要确保cudnn的动态链接库在$LD_LIBRARY_PATH中。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">使用CMake编译PaddlePaddle源码</a><ul>
+<li><a class="reference internal" href="#id2">下载编译依赖</a><ul>
+<li><a class="reference internal" href="#jumbo">Jumbo 下载编译依赖</a><ul>
+<li><a class="reference internal" href="#id3">安装 Jumbo</a></li>
+<li><a class="reference internal" href="#id4">执行PaddlePaddle编译依赖安装脚本</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#svn">百度SVN下载编译依赖</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#makefile">设置编译选项，生成Makefile</a><ul>
+<li><a class="reference internal" href="#id5">选择编译路径</a></li>
+<li><a class="reference internal" href="#cmakegcc">设置CMake编译选项和GCC路径</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id6">编译Makefile，安装</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/build/internal/build_from_source_zh_cn.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PADDLE  documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, PADDLE developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+    </div>
+  </body>
+</html>

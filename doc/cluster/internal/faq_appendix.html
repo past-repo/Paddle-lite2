@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>FAQ和附录 &mdash; PaddlePaddle  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PaddlePaddle  documentation" href="../../index.html" />
+    <link rel="up" title="PaddlePaddle新平台" href="index.html" />
+    <link rel="next" title="Cluster Training" href="../opensource/cluster_train.html" />
+    <link rel="prev" title="更新列表(Change Log)" href="change_log.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../opensource/cluster_train.html" title="Cluster Training"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="change_log.html" title="更新列表(Change Log)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="faq">
+<span id="faq"></span><h1>FAQ和附录<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="faq">
+<span id="id1"></span><h2>FAQ<a class="headerlink" href="#faq" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>问</strong>：为什么输出很多<code class="docutils literal"><span class="pre">if</span> <span class="pre">[</span> <span class="pre">“0”</span> <span class="pre">-eq</span> <span class="pre">“0”];</span></code>等异常日志？<br>
+<strong>答</strong>：这是shell 打开了 set -x debug日志，不是异常。</li>
+<li><strong>问</strong>：有时在配置文件里使用<code class="docutils literal"><span class="pre">from</span> <span class="pre">something</span> <span class="pre">import</span> <span class="pre">*</span></code>之类的语法，出现cluster_config解析失败？<br>
+<strong>答</strong>：<code class="docutils literal"><span class="pre">import</span> <span class="pre">*</span></code>操作会污染trainer_config.conf全局空间，这跟receiver在获取cluster_config参数时重写了config_parser.py的cluster_config函数冲突，导致该函数置空，最终解析失败。因此不建议使用这种方法。</li>
+<li><strong>问</strong>：cluster_config设置注意事项？<br>
+<strong>答</strong>：1）尽量将该函数调用放到对train.list、test.list、train.meta.list、test.meta.list的处理之前；
+2）导入trainer_config_helper的模块时避免采用<code class="docutils literal"><span class="pre">import</span> <span class="pre">*</span></code>,  会间接引入config_parser.py全局域。</li>
+<li><strong>问</strong>：如何查看指定receiver支持的集群列表？<br>
+<strong>答</strong>：1）可以随便指定一个<code class="docutils literal"><span class="pre">--where</span> <span class="pre">xx</span></code>，后端receiver会因为xx是非法集群而列出所有集群列表；
+2）可以通过<code class="docutils literal"><span class="pre">-c</span> <span class="pre">&quot;ls</span> <span class="pre">../../train/core/nodes.configs&quot;</span></code>在后端receiver执行获取一个列表。</li>
+</ul>
+</div>
+<div class="section" id="appendix">
+<span id="appendix"></span><h2>附录(Appendix)<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="receiver-lists">
+<span id="receiver-lists"></span><h3>可用代理服务器(Receiver Lists)<a class="headerlink" href="#receiver-lists" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-text"><div class="highlight"><pre><span></span>receivers=[
+        &quot;yq01-idl-gpu-offline41.yq01.baidu.com:9090&quot;~&quot;yq01-idl-gpu-offline41.yq01.baidu.com:9099&quot;,
+        &quot;yq01-idl-gpu-offline41.yq01.baidu.com:9190&quot;~&quot;yq01-idl-gpu-offline41.yq01.baidu.com:9199&quot;,
+        &quot;yq01-idl-gpu-offline41.yq01.baidu.com:9290&quot;~&quot;yq01-idl-gpu-offline41.yq01.baidu.com:9299&quot;,
+]
+</pre></div>
+</div>
+</div>
+<div class="section" id="cluster-lists">
+<span id="cluster-lists"></span><h3>可用集群(Cluster Lists)<a class="headerlink" href="#cluster-lists" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-text"><div class="highlight"><pre><span></span>yq01-idl-idl-offline_slurm_cluster
+yq01-idl-idl-offline_vfs_slurm_cluster
+yq01-idl-idl-offline_vfs_metric_learning_slurm_cluster
+yq01-ecom-triger-box_slurm_cluster
+yq01-msbu-dpp-offline_slurm_cluster
+cp01-idl-dl-gpu-56G_cluster
+nmg01-idl-dl-cpu-10G_cluster
+nmg01-hpc-off-dmop-cpu-10G_cluster
+nmg01-hpc-off-dmop-slow-cpu-10G_cluster
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FAQ和附录</a><ul>
+<li><a class="reference internal" href="#faq">FAQ</a></li>
+<li><a class="reference internal" href="#appendix">附录(Appendix)</a><ul>
+<li><a class="reference internal" href="#receiver-lists">可用代理服务器(Receiver Lists)</a></li>
+<li><a class="reference internal" href="#cluster-lists">可用集群(Cluster Lists)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="change_log.html"
+                        title="previous chapter">更新列表(Change Log)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../opensource/cluster_train.html"
+                        title="next chapter">Cluster Training</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/cluster/internal/faq_appendix.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../opensource/cluster_train.html" title="Cluster Training"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="change_log.html" title="更新列表(Change Log)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, PaddlePaddle developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+    </div>
+  </body>
+</html>

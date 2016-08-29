@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Contribute Code &mdash; PaddlePaddle  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PaddlePaddle  documentation" href="../../index.html" />
+    <link rel="up" title="Build And Install PaddlePaddle" href="../index.html" />
+    <link rel="next" title="Contribute to PaddlePaddle" href="../contribute_to_paddle.html" />
+    <link rel="prev" title="Build and Install" href="../build_from_source.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contribute_to_paddle.html" title="Contribute to PaddlePaddle"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../build_from_source.html" title="Build and Install"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Build And Install PaddlePaddle</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="contribute-code">
+<span id="contribute-code"></span><h1>Contribute Code<a class="headerlink" href="#contribute-code" title="Permalink to this headline">¶</a></h1>
+<p>We use <strong>GIT</strong> as an example, and if you use <strong>SVN</strong>, find commands <a class="reference external" href="http://svnbook.red-bean.com/en/1.7/svn.ref.html">here</a>.</p>
+<div class="section" id="code-review">
+<span id="code-review"></span><h2>Code Review<a class="headerlink" href="#code-review" title="Permalink to this headline">¶</a></h2>
+<p>To contribute code to PaddlePaddle, one needs to go through the code review process.</p>
+<div class="section" id="download-script">
+<span id="download-script"></span><h3>Download Script<a class="headerlink" href="#download-script" title="Permalink to this headline">¶</a></h3>
+<p>To download <code class="docutils literal"><span class="pre">upload.py</span></code> to submit code review, address <a class="reference external" href="http://cooder.baidu.com">http://cooder.baidu.com</a>, and click “客户端下载, Linux” 开发机. See following picture:</p>
+<p><img alt="download upload.py" src="../../_images/upload_py.png" /></p>
+<p>Then, enable the execution permission via:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>chmod +x ./upload.py 
+</pre></div>
+</div>
+</div>
+<div class="section" id="commit-changes">
+<span id="commit-changes"></span><h3>Commit Changes<a class="headerlink" href="#commit-changes" title="Permalink to this headline">¶</a></h3>
+<p><strong>NOTE</strong>: We do not recommend to develop on <code class="docutils literal"><span class="pre">master</span></code> branch. In following example, we develop on<code class="docutils literal"><span class="pre">dev</span></code> branch, and assume <code class="docutils literal"><span class="pre">upload.py</span></code> is in the current directory.</p>
+<ul class="simple">
+<li>Run the sample commands:</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>git checkout -b dev
+touch test.cpp
+git add test.cpp
+git commit -m <span class="s2">&quot;add test file&quot;</span>
+./upload.py
+</pre></div>
+</div>
+<p>You will see following messages, where the issue_number is 3955633:</p>
+<p><img alt="cooder" src="../../_images/upload.png" /></p>
+<ul class="simple">
+<li>Follow the link on the screen to arrive at this page, which shows the changed list. You can review the details of the changes by clicking each file. After making sure all the changes are correct, click the circled icon.</li>
+</ul>
+<p><img alt="cooder screen" src="../../_images/cooder_page.png" /></p>
+<ul class="simple">
+<li>Edit following fields, and click “保存“ after finishing the edit. It will automatically send emails to reviewers.<ul>
+<li>评审人: reviewer email prefixes. <strong>NOTE THAT</strong> you must choose at least two members of <code class="docutils literal"><span class="pre">dangqingqing</span></code>, <code class="docutils literal"><span class="pre">yuyang18</span></code>, <code class="docutils literal"><span class="pre">luotao02</span></code>, <code class="docutils literal"><span class="pre">wangyanfei01</span></code>, <code class="docutils literal"><span class="pre">wangjiang03</span></code>, <code class="docutils literal"><span class="pre">xuwei06</span></code>.</li>
+<li>抄送人: CCed reviewer email prefixes. For PaddlePaddle commits, we always CC <code class="docutils literal"><span class="pre">paddle-sys</span></code>.</li>
+<li>描述信息： the detailed description of the changes.</li>
+</ul>
+</li>
+</ul>
+<p><img alt="cooder edit" src="../../_images/cooder_edit.png" /></p>
+<ul class="simple">
+<li>If you make some further changes and want to update the cooder, use the following command:</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./upload.py -i &lt;issue_number&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="check-in">
+<span id="check-in"></span><h2>Check In<a class="headerlink" href="#check-in" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Change the commit message using the following command, and edit the commit message at the following page, where the last line of the message should be <code class="docutils literal"><span class="pre">ISSUE=&lt;issue_number&gt;</span></code>.</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>git commit -amend
+</pre></div>
+</div>
+<p><img alt="commit message" src="../../_images/commit_message.png" /></p>
+<ul class="simple">
+<li>Push the commit to <strong>GIT</strong> using:</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>git push origin dev:master
+</pre></div>
+</div>
+<ul class="simple">
+<li>If you have more than one commits in a change, combine them into a single change before pushing. You can achieve it via <strong>interactive rebasing</strong>. See detailed documentation <a class="reference external" href="https://git-scm.com/book/en/v2/Git-Branching-Rebasing">here</a>.</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>git rebase --interactive master
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Contribute Code</a><ul>
+<li><a class="reference internal" href="#code-review">Code Review</a><ul>
+<li><a class="reference internal" href="#download-script">Download Script</a></li>
+<li><a class="reference internal" href="#commit-changes">Commit Changes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#check-in">Check In</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../build_from_source.html"
+                        title="previous chapter">Build and Install</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../contribute_to_paddle.html"
+                        title="next chapter">Contribute to PaddlePaddle</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/build/internal/contribute_code.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../contribute_to_paddle.html" title="Contribute to PaddlePaddle"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../build_from_source.html" title="Build and Install"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Build And Install PaddlePaddle</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, PaddlePaddle developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+    </div>
+  </body>
+</html>

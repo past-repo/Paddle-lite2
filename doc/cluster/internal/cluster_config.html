@@ -1,0 +1,354 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>集群任务配置说明 &mdash; PaddlePaddle  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PaddlePaddle  documentation" href="../../index.html" />
+    <link rel="up" title="PaddlePaddle新平台" href="index.html" />
+    <link rel="next" title="服务端部署" href="server_deployment.html" />
+    <link rel="prev" title="客户端教程" href="client_tutorial.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="server_deployment.html" title="服务端部署"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="客户端教程"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="">
+<span id="id1"></span><h1>集群任务配置说明<a class="headerlink" href="#" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="config-file">
+<span id="config-file"></span><h2>集群配置文件(Config File)<a class="headerlink" href="#config-file" title="Permalink to this headline">¶</a></h2>
+<p>集群配置的相关选项需要通过调用<code class="docutils literal"><span class="pre">cluster_config</span></code>方法来指定。<strong>注意</strong>：如果配置文件需要引入任何第三方依赖模块<code class="docutils literal"><span class="pre">import</span> <span class="pre">$some_thirdparty</span></code>，请将<code class="docutils literal"><span class="pre">cluster_config</span></code>放置在<code class="docutils literal"><span class="pre">import</span> <span class="pre">$some_thirdparty</span></code>前面否则，可能会调用失败。</p>
+<p>具体的接口定义如下：</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">cluster_config</span><span class="p">(</span>
+    <span class="n">fs_name</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">fs_ugi</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">force_reuse_output_path</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">work_dir</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">has_meta_data</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">train_data_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">test_data_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">train_meta_data_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">test_meta_data_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">init_model_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">pserver_model_dir</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">pserver_model_pass</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span>
+    <span class="n">loadsave_parameters_in_pserver</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">enable_predict_output</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">model_path</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="mi">7164</span><span class="p">,</span>
+    <span class="n">ports_num</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">use_remote_sparse</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="n">mail_address</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="n">comment</span> <span class="o">=</span> <span class="bp">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><strong>fs_name</strong>:<ul>
+<li>当前分布式训练任务数据及模型存放的HDFS名称</li>
+<li>示例：<code class="docutils literal"><span class="pre">fs_name=&quot;hdfs://nmg01-mulan-hdfs.dmop.baidu.com:54310&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>fs_ugi</strong>:<ul>
+<li>当前分布式训练任务用到的HDFS的UGI</li>
+<li>示例：<code class="docutils literal"><span class="pre">&quot;paddle_demo,paddle_demo&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>force_reuse_output_path</strong>:<ul>
+<li>如果赋值为true, 会直接移除<code class="docutils literal"><span class="pre">output_path</span></code>而不检查其是否存在</li>
+</ul>
+</li>
+<li><strong>checking output_path exist</strong>:<ul>
+<li>检查指定的输出目录是否存在，默认值false。</li>
+</ul>
+</li>
+<li><strong>work_dir</strong>：<ul>
+<li>如果指定了<code class="docutils literal"><span class="pre">work_dir</span></code>，会按照如下方式指定：<ul>
+<li>train_data_path = work_dir + &#8220;/train&#8221;</li>
+<li>test_data_path = work_dir + &#8220;/test&#8221;</li>
+<li>train_meta_path = work_dir + &#8220;/train_meta_dir&#8221; (如果使用meta_data)</li>
+<li>test_meta_path = work_dir + &#8220;/test_meta_dir&#8221; (如果使用meta_data)</li>
+<li>output = work_dir + &#8220;/output&#8221;</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>has_meta_data</strong>:<ul>
+<li>默认值false, 如果设置为true, 自动生成<code class="docutils literal"><span class="pre">*_meta_path</span></code>, 否则无行为</li>
+<li>如果指定了<code class="docutils literal"><span class="pre">work_dir</span></code>并且存在<code class="docutils literal"><span class="pre">meta_data</span></code>，请将本选项设置为true</li>
+</ul>
+</li>
+<li><strong>train_data_path</strong>:<ul>
+<li>训练数据在HDFS上的路径</li>
+<li>示例：<code class="docutils literal"><span class="pre">train_data_path=&quot;/app/idl/idl-dl/paddle/demo/mnist/train&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>test_data_path</strong> :<ul>
+<li>测试数据在HDFS上的路径</li>
+<li>如<code class="docutils literal"><span class="pre">test_data_path=&quot;/app/idl/idl-dl/paddle/demo/mnist/test&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>train_meta_data_path</strong>:<ul>
+<li>训练数据元数据路径，默认为None。</li>
+</ul>
+</li>
+<li><strong>test_meta_data_path</strong>:<ul>
+<li>测试元数据路径，默认为None。</li>
+</ul>
+</li>
+<li><strong>output_path</strong>:<ul>
+<li>输出文件在HDFS上的路径</li>
+<li>示例：<code class="docutils literal"><span class="pre">output_path=&quot;/app/idl/idl-dl/paddle/demo/mnist/output_\</span></code>date +%Y%m%d%H%M%S`&#8220;`</li>
+</ul>
+</li>
+<li><strong>model_path</strong>:<ul>
+<li>模型在HDFS上的保存路径，模型评估时<code class="docutils literal"><span class="pre">tester</span></code>会从该路径读取模型文件，默认值是None</li>
+<li>示例：<code class="docutils literal"><span class="pre">model_path=&quot;output&quot;</span></code>
+&#8211; <strong>init_model_path</strong>:
+指指定初始化模型路径。如果需要从已有模型开始训练，请指定该参数</li>
+<li>其他情况下不需要指定该参数，如<code class="docutils literal"><span class="pre">init_model_path=&quot;&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>pserver_model_dir</strong>:<ul>
+<li>为pserver指定的初始化模型路径</li>
+</ul>
+</li>
+<li><strong>pserver_model_pass</strong>:<ul>
+<li>示例：如果设置<code class="docutils literal"><span class="pre">pserver_model_dir</span> <span class="pre">=</span> <span class="pre">&quot;/app/paddle/models</span></code>和<code class="docutils literal"><span class="pre">pserver_model_dir</span> <span class="pre">=</span> <span class="pre">&quot;/app/paddle/models</span></code><ul>
+<li>rank0将从<code class="docutils literal"><span class="pre">/app/paddle/models/rank-00000/pass-00123</span></code>下载模型</li>
+<li>rank1将从<code class="docutils literal"><span class="pre">/app/paddle/models/rank-00001/pass-00123</span></code>下载模型</li>
+<li>依次类推</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>save_dir</strong>:<ul>
+<li>paddle_trainer的模型存放路径，如果指定的值不是<code class="docutils literal"><span class="pre">output</span></code>的话，模型就不会被上传到HDFS</li>
+<li>示例：<code class="docutils literal"><span class="pre">save_dir=&quot;output&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>loadsave_parameters_in_pserver</strong>:<ul>
+<li>是否由pserver来保存模型</li>
+<li>0表示由paddle_trainer来保存模型，1表示由pserver来保存模型</li>
+</ul>
+</li>
+<li><strong>enable_predict_output</strong>:<ul>
+<li>在评估模式下，如果设置为1，用户可以获取不同的Layer的值，缺省为0</li>
+</ul>
+</li>
+<li><strong>port</strong>:<ul>
+<li>pserver端口</li>
+</ul>
+</li>
+<li><strong>port_num</strong>:<ul>
+<li>pserver链接的端口数量</li>
+<li>在使用了fat channels的情况下，增加该数量可以更好的发挥集群性能</li>
+</ul>
+</li>
+<li><strong>use_remote_sparse</strong>:<ul>
+<li>是否使用远程稀疏更新</li>
+<li>示例：<code class="docutils literal"><span class="pre">use_remote_sparse</span> <span class="pre">=</span> <span class="pre">True</span></code></li>
+</ul>
+</li>
+<li><strong>comment</strong>:<ul>
+<li>通过此选项为pserver和trainer添加注释</li>
+<li>示例：<code class="docutils literal"><span class="pre">comment=&quot;${PBS_O_LOGNAME}_${PBS_JOBID}&quot;</span></code></li>
+</ul>
+</li>
+<li><strong>mail_address</strong>:<ul>
+<li>如果存在慢节点，可以通过在此设定的邮箱发送报警</li>
+<li>示例：<code class="docutils literal"><span class="pre">mail_address=&quot;example_user&#64;baidu.com&quot;</span></code></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="command-options">
+<span id="command-options"></span><h2>命令行选项(Command Options)<a class="headerlink" href="#command-options" title="Permalink to this headline">¶</a></h2>
+<p>客户端除需要指定配置文件之外，主要包括任务相关的配置，例如任务名称，集群类型，提交者邮箱等。具体的配置选项如下：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>submit job to general scheduler center.
+
+optional arguments:
+  -h, --help            打印帮助信息
+  -w WHERE, --where WHERE
+                        物理集群名称
+  -n NUM_NODES, --num_nodes NUM_NODES
+                        训练使用节点数量
+  -j JOB_NAME, --job_name JOB_NAME
+                        作业名称
+  -s SUBMITTER, --submitter SUBMITTER
+                        作业提交者邮箱前缀
+  -l TIME_LIMIT, --time_limit TIME_LIMIT
+                        作业最长运行时间
+  -p JOB_PRIORITY, --job_priority JOB_PRIORITY
+                        作业优先级
+  -t USE_GPU, --use_gpu USE_GPU
+                        训练类型，默认为<span class="s2">&quot;gpu&quot;</span>，如使用CPU，请指定<span class="s2">&quot;cpu&quot;</span>
+  -f CONFIG, --config CONFIG
+                        任务的配置文件
+  -i THIRDPARTY, --thirdparty THIRDPARTY
+                        任务的第三方依赖文件所在目录
+  -c SHELL, --shell SHELL
+                        自定义shell命令，此命令将被转发到Receiver服务器上执行
+</pre></div>
+</div>
+<p>除以上选项外，所有可被<code class="docutils literal"><span class="pre">paddle</span> <span class="pre">train</span></code>接受的参数都可以通过客户端指定，这些参数会通过客户端传递给各个训练节点上的trainer进程，例如：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>  --trainer_count <span class="m">4</span> <span class="se">\</span>
+  --num_passes <span class="m">1</span> <span class="se">\</span>
+  --log_period <span class="m">1000</span> <span class="se">\</span>
+  --dot_period <span class="m">100</span> <span class="se">\</span>
+  --saving_period 1
+</pre></div>
+</div>
+<p>新平台后台对参数会做部分CHECK和优化动作，如会自动重写trainer_count = 16以最大化box集群GPU计算资源。其他参数的合法性需要多机主进程trainer运行时CHECK。</p>
+</div>
+<div class="section" id="thirdparty-dependencies">
+<span id="thirdparty-dependencies"></span><h2>第三方依赖(Thirdparty Dependencies)<a class="headerlink" href="#thirdparty-dependencies" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">--thirdparty</span></code>可以看作一个开放式接口。在某些情况下，用户的配置文件需要依赖第三方代码和库。例如输入图像时需要专门的data provider和一些第三方的动态库，这些文件可以统一放置在一个目录下，通过客户端的<code class="docutils literal"><span class="pre">--thirdparty</span></code>选项上传。通常情况下，平台会将<code class="docutils literal"><span class="pre">thirdparty</span></code>加入到paddle train主进程的python环境路径，用户在配置文件里直接引用即可。另一方面，用户可以通过<code class="docutils literal"><span class="pre">before_hook.sh</span></code>对训练环境进行精细化的自定义，以满足训练时的各种自定义需求, 例如使用自定义版本的<code class="docutils literal"><span class="pre">paddle_trainer</span></code>和<code class="docutils literal"><span class="pre">paddle_pserver</span></code>等，都可以通过<code class="docutils literal"><span class="pre">--thirdparty</span></code>配合<code class="docutils literal"><span class="pre">before_hook.sh</span></code>实现。</p>
+<p>假定通过客户端指定<code class="docutils literal"><span class="pre">--thirdparty</span> <span class="pre">$user_path/$your_thirdpary_dir</span></code>，<code class="docutils literal"><span class="pre">$user_path/$your_thirdparty_dir</span></code>中的文件在集群节点上将会放置在<code class="docutils literal"><span class="pre">./thirdparty/$your_thirdparty_dir</span></code>下。集群python运行时环境：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nv">PYTHONPATH</span><span class="o">=</span>paddle:./thidparty/<span class="nv">$user_path</span>/thirdpary
+<span class="nv">PYTHONHOME</span><span class="o">=</span>./python27-gcc482
+</pre></div>
+</div>
+<p>其中paddle模块的目录结构如下：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>paddle
+    <span class="p">|</span>-- __init__.py
+    <span class="p">|</span>-- __init__.pyc
+    <span class="p">|</span>-- internals
+    <span class="p">|</span>-- proto
+    <span class="p">|</span>-- trainer
+    <span class="p">|</span>-- trainer_config_helpers
+    <span class="sb">`</span>-- utils
+</pre></div>
+</div>
+<ul class="simple">
+<li>gcc48运行时环境的python解释器</li>
+</ul>
+<p>用户可以单独下载供单机测试：</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>hadoop dfs -Dfs.default.name<span class="o">=</span>hdfs://nmg01-mulan-hdfs.dmop.baidu.com:54310 -Dhadoop.job.ugi<span class="o">=</span>paddle_demo,paddle_demo -ls /app/idl/idl-dl/paddle/tools/python27-gcc482.tar.gz
+</pre></div>
+</div>
+<ul class="simple">
+<li>before_hook后门执行脚本</li>
+</ul>
+<p>用户可以在<code class="docutils literal"><span class="pre">$user_path/thirdpary</span></code>目录下添加自定义脚本before_hook.sh。通常情况下这个脚本可以用来将依赖文件根据线上运行时环境进行部署，但实际上不仅限于此，任何可以运行的shell脚本都可以作为before_hook.sh使用。</p>
+<p>before_hook.sh<strong>正常执行须满足如下条件</strong>：1）必须放置在<code class="docutils literal"><span class="pre">$user_path/thirdpary</span></code>目录下；2）目录的名称必须为<code class="docutils literal"><span class="pre">thirdparty</span></code>。
+这样每个训练节点上trainer启动前，都会先执行before_hook.sh。</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">集群任务配置说明</a><ul>
+<li><a class="reference internal" href="#config-file">集群配置文件(Config File)</a></li>
+<li><a class="reference internal" href="#command-options">命令行选项(Command Options)</a></li>
+<li><a class="reference internal" href="#thirdparty-dependencies">第三方依赖(Thirdparty Dependencies)</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="client_tutorial.html"
+                        title="previous chapter">客户端教程</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="server_deployment.html"
+                        title="next chapter">服务端部署</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/cluster/internal/cluster_config.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="server_deployment.html" title="服务端部署"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="client_tutorial.html" title="客户端教程"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">PaddlePaddle  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Cluster Train</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >PaddlePaddle新平台</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, PaddlePaddle developers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.5.
+    </div>
+  </body>
+</html>
