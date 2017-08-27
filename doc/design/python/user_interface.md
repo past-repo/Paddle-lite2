@@ -2,12 +2,12 @@
 
 ## Basic Concepts
 ### Variable
-A `Variable` represents shared, persistent state manipulated by a Paddle model program.
+A `Variable` represents shared, persistent state manipulated by a Paddle program.
 
 Variables are maintained by `pd.Variable` class,
-each `pd.Variable` represents a tensor whose value can be changed by running ops on it.
+each `pd.Variable` represents a tensor whose value can be changed by ops.
 
-A basic way to create a variable is:
+A basic way to create a variable is
 
 ```python
 import paddle as pd
@@ -44,13 +44,12 @@ to get the value of the variable, one can call
 print v.val()
 ```
 
-
 ### Block
 Paddle use a `Block` to represent and execute user's program, 
 this is a basic concept when user write a Paddle program.
 
 In computer programming, a block is a lexical structure of source code which is grouped together. 
-In most programming languages, block is useful when define a function or some conditional statements such as `if-else`, `while`.
+In most programming languages, block is useful when define a function or some conditional statements such as `if-else` and `while`.
 
 Similarlly, the function of `pd.Block` in Paddle is to enable groups of operators to be treated as if they were one operator to make `if_else_op` or RNNOp's declaration simpler and Python's `with` statement is used to make the codes look much like a block.
 
@@ -64,7 +63,7 @@ W = pd.Variable(shape=[20, 20])
 U = pd.Variable(shape=[20, 20])
 
 rnn0 = RNNOp()
-with rnn0.stepnet(inputs=[v]) as net:
+with rnn0.stepnet() as net:
     # declare stepnet's inputs
     x = net.add_input(v)
     # declare memories
@@ -114,9 +113,10 @@ out = ifelseop()
 In most cases, user need not to create a `pd.Block` directly, but it is the basis of a Paddle program:
 
 - user's program is stored in `pd.Block`
-- when we want to run the codes, we just need to execute a corresponding `pd.Block`
+- when run the codes, just execute the corresponding `pd.Block`
 
-A `pd.Block` can has its own namespace, which makes it possible to hide the local variables from block block.
+
+### namespace
 
 ```python
 W = pd.Variable(shape=[20, 20])
@@ -125,16 +125,16 @@ W = pd.Variable(shape=[20, 20])
 a = some_op()
 b = some_op()
 
-with pd.Block('namespace0'):
+with pd.namespace('namespace0'):
     # W is a local variable and has its own value
     W = pd.Variable(shape=[20, 20])
     x = pd.matmul(W, a)
     y = x + b
-    
-with pd.Block('namespace1'):
+
+with pd.namespace('namespace1'):
     # W is the global variable
     z = pd.matmul(W, a)
-    
+
 # g use local variables in both namespace0 and namespace1
 g = pd.add_two(y, z)
 ```
@@ -178,59 +178,18 @@ These ops will help to optimize trainable variables after backward propagation f
 each variable will have a optimizer.
 
 ## Compatible with V2 Syntax
+We have new concepts like Variable, Block and Op, which are very basic concepts, 
+and it should be possible to be compatible with V2 api as the underlying architecture.
+
+What's more, some recent models like GAN and tree-LSTM are hard to be expressed using just V2 api,
+so the new concepts are vital to enable user writing new models in the future.
+
+**In a word, the new user's python interface will keep compatible with V2 api, but must give a few new concepts like `Variable`, 
+`Op` and several helper functions to express more complex models.**
+
+
 
 ## Some Demos
-### MNist Task Demo
-
-```python
-import paddle as pd
-
-# the first shape is None, which means the batch size of variable is not known.
-image = pd.Variable(shape=[None, 128])
-label = pd.Variable(shape=[None, 1])
-
-# network config
-W1 = pd.Variable('W1', shape=[128, 64])
-
-fc_out = pd.matmul(image, W1)
-prediction = pd.softmax(fc_out, size=10)
-
-cost = pd.cross_entropy(prediction, label)
-
-optimizer = pd.SGDOptimizer().minimize(cost)
-
-
-# training details
-def data_provider(path):
-    images = []
-    labels = []
-    with open(path) as f:
-        for no, line in enumerate(f):
-            fs = line.split('\t')
-            assert len(fs) == 2
-            image_record = map(int, fs[0].split())
-            label_record = [int(fs[1])]
-            images.append(image_record)
-            labels.append(label_record)
-            if no > 0 and no % 100 == 0:
-                yield np.array(images), np.array(labels)
-            images = []
-            labels = []
-
-
-for pass_no in range(100):
-    for batch_no, batch in enumerate(data_provider('./data.txt')):
-        # train mode
-        _, cost_ = pd.eval(
-            [optimizer, cost], feeds={image: batch[0],
-                                      label: batch[1]})
-        print '%dth pass train cost: %f' % (pass_no, cost_)
-        # test mode
-        if batch_no > 0 and batch_no % 10 == 0:
-            cost_ = pd.eval(cost)
-            print '%dth pass test cost' % (pass_no, cost_)
-```
-
 ### GAN Task Demo
 
 ```python
@@ -254,17 +213,21 @@ def sample_Z(m, n):
 
 def discriminator(x):
     # use block with namespace to hide local variables
-    with pd.Block('discriminator') as block:
+    with pd.namespace('discriminator') as block:
         # declare model parameters
         W1 = pd.get_variable(
             'W1',
             shape=[784, 128],
-            initializer=pd.gaussian_random_initializer(std=0.1))
+            initializer=pd.gaussian_random_initializer(std=0.1),
+            reuse=True)
         b1 = pd.get_variable(
-            'b1', data=np.zeros(128)
+            'b1', data=np.zeros(128),
+            reuse=True
         )  # variable also support initialization using a  numpy data
-        W2 = pd.get_variable('W2', data=np.random.rand(128, 1))
-        b2 = pd.Variable('b2', data=np.zeros(128))
+        W2 = pd.get_variable('W2', data=np.random.rand(128, 1),
+                             reuse=True)
+        b2 = pd.Variable('b2', data=np.zeros(128),
+                         reuse=True)
 
         # network config
         h1 = pd.relu(pd.matmul(x, W1) + b1)
@@ -277,7 +240,7 @@ theta_D = [D_W1, D_b1, D_W2, D_b2]
 
 
 def generator(z):
-    with pd.Block('generator') as block:
+    with pd.namespace('generator') as block:
         # declare model parameters
         W1 = pd.get_variable(
             'W1',
@@ -355,4 +318,3 @@ for i in range(10000):
             logger.info("batch %d, D loss: %f" % (batch_no, D_loss_cur))
             logger.info("batch %d, G loss: %f" % (batch_no, G_loss_cur))
 ```
-
