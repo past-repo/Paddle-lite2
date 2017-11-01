@@ -45,8 +45,8 @@ inline const LoDTensor& EigenAddto(LoDTensor* to, LoDTensor& from,
   return *to;
 }
 
-rnn::StateAttr GenGradStateAttr(const rnn::StateAttr& state) {
-  rnn::StateAttr res;
+StateAttr GenGradStateAttr(const StateAttr& state) {
+  StateAttr res;
   PADDLE_ENFORCE(state.var.back() != 'D', "%s", state.var);
   // PADDLE_ENFORCE(state.boot_var.back() != 'D', "%s", state.boot_var);
   PADDLE_ENFORCE(state.pre_var.back() != 'D', "%s", state.pre_var);
@@ -191,14 +191,14 @@ void RNNAlgorithm::CreateScopes() {
   std::vector<std::string> ex_states;
   std::vector<std::string> step_unit_outputs;
   std::transform(arg_.states.begin(), arg_.states.end(),
-                 std::back_inserter(states), [this](const rnn::StateAttr& m) {
+                 std::back_inserter(states), [this](const StateAttr& m) {
                    return IsForward() ? m.var : framework::GradVarName(m.var);
                  });
-  std::transform(
-      arg_.states.begin(), arg_.states.end(), std::back_inserter(ex_states),
-      [this](const rnn::StateAttr& m) {
-        return IsForward() ? m.pre_var : framework::GradVarName(m.pre_var);
-      });
+  std::transform(arg_.states.begin(), arg_.states.end(),
+                 std::back_inserter(ex_states), [this](const StateAttr& m) {
+                   return IsForward() ? m.pre_var
+                                      : framework::GradVarName(m.pre_var);
+                 });
   for (const auto& item : step_unit_->Outputs()) {
     for (const auto& var : item.second) {
       step_unit_outputs.push_back(var);
@@ -245,7 +245,8 @@ void RNNAlgorithm::RunSteps() {
     for (int step = cache_.num_steps - 1; step >= 0; step--) {
       auto& step_scope = cache_.GetScope(step);
       // after run, the current state@grad will be assigned.
-      step_unit_->Run(step_scope, *cache_.dev_ctx);
+      // step_unit_->Run(step_scope, *cache_.dev_ctx);
+      RunOneStep(*cache_.dev_ctx, *cache_.op, &step_scope);
       // accumulate gradients to the state@grad in the previous scope.
       if (step < cache_.num_steps - 1) {
         for (auto& state : arg_.states) {
@@ -281,7 +282,7 @@ void RNNAlgorithm::InitStates() {
   }
 }
 
-void RNNAlgorithm::CreateState(const rnn::StateAttr& state_attr, size_t step) {
+void RNNAlgorithm::CreateState(const StateAttr& state_attr, size_t step) {
   auto& scope = cache_.GetScope(step);
   // if backward, init the LoDTensor
   // TODO(superjom) some improvement here
@@ -303,7 +304,7 @@ void RNNAlgorithm::CreateState(const rnn::StateAttr& state_attr, size_t step) {
   states_[state_attr.var].WriteShared(step, state);
 }
 
-void RNNAlgorithm::LinkState(const rnn::StateAttr& state, size_t step) {
+void RNNAlgorithm::LinkState(const StateAttr& state, size_t step) {
   auto& scope = cache_.GetScope(step);
   auto& state_pre = *cache_.GetTensor(scope, state.pre_var);
 
@@ -325,7 +326,7 @@ void RNNAlgorithm::LinkState(const rnn::StateAttr& state, size_t step) {
   pre_states_[state.var].WriteShared(step, state_pre);
 }
 
-void RNNAlgorithm::LinkGradState(const rnn::StateAttr& state, size_t step) {
+void RNNAlgorithm::LinkGradState(const StateAttr& state, size_t step) {
   if (step == 0) {
     ExportInitialStateGradient(state);
   } else {
@@ -344,7 +345,7 @@ void RNNAlgorithm::LinkGradState(const rnn::StateAttr& state, size_t step) {
   }
 }
 
-void RNNAlgorithm::LinkInitialState(const rnn::StateAttr& state) {
+void RNNAlgorithm::LinkInitialState(const StateAttr& state) {
   // all the step_inputs' metas should be the same, just randomly select one
   // and get the dyseq meta.
   const auto& some_meta = dy_seq_metas_[arg_.inlinks.front()];
@@ -359,7 +360,7 @@ void RNNAlgorithm::LinkInitialState(const rnn::StateAttr& state) {
                               pre_state->place());
 }
 
-void RNNAlgorithm::ExportInitialStateGradient(const rnn::StateAttr& state) {
+void RNNAlgorithm::ExportInitialStateGradient(const StateAttr& state) {
   // all the step_inputs' metas should be the same, just randomly select one
   // and get the dyseq meta.
   const auto& some_meta = dy_seq_metas_[arg_.inlinks.front()];
@@ -397,28 +398,53 @@ void RNNAlgorithm::ExportWeightGradients() {
   }
 }
 
-void RNNAlgorithm::ArgCache::Init(const rnn::ArgumentName& name,
+void RNNAlgorithm::ArgCache::Init(const ArgumentName& name,
                                   const paddle::framework::OperatorBase& op,
                                   const paddle::framework::Scope& scope,
                                   platform::DeviceContext const* dev_ctx,
-                                  rnn::Argument* arg, bool is_grad = false) {
+                                  Argument* arg, bool is_grad = false) {
   this->scope = &scope;
   InitArgument(name, op, arg, is_grad);
   CacheScopes(scope, *arg);
   CacheInlinks(scope, arg->inlinks);
   CacheOutlinks(scope, arg->outlinks);
+  this->op = &op;
   this->dev_ctx = dev_ctx;
 }
 
-void RNNAlgorithm::ArgCache::InitArgument(const rnn::ArgumentName& name,
-                                          const OperatorBase& op,
-                                          rnn::Argument* arg,
+void RNNAlgorithm::ArgCache::InitArgument(const ArgumentName& name,
+                                          const OperatorBase& op, Argument* arg,
                                           bool is_grad = false) {
-  rnn::InitArgument(name, arg, op, is_grad);
+  arg->step_scopes =
+      is_grad ? op.Input(name.step_scopes) : op.Output(name.step_scopes);
+  arg->inlinks = op.Inputs(name.inlinks);
+  arg->outlinks = op.Outputs(name.outlinks);
+
+  auto& boot_memories = is_grad ? op.Outputs(name.initial_states)
+                                : op.Inputs(name.initial_states);
+  // attributes
+  auto& memories = op.Attr<std::vector<std::string>>(name.states);
+  auto& pre_memories = op.Attr<std::vector<std::string>>(name.ex_states);
+
+  PADDLE_ENFORCE(memories.size() == boot_memories.size(),
+                 "the size of states, initial_states don't match:%d,%d",
+                 memories.size(), boot_memories.size());
+  PADDLE_ENFORCE(pre_memories.size() == boot_memories.size(),
+                 "the size of ex_states, initial_states don't match:%d,%d",
+                 pre_memories.size(), boot_memories.size());
+  PADDLE_ENFORCE(memories.size() > 0, "more than 1 states should be set");
+
+  for (size_t i = 0; i < memories.size(); ++i) {
+    StateAttr mem_attr;
+    mem_attr.var = memories[i];
+    mem_attr.pre_var = pre_memories[i];
+    mem_attr.boot_var = boot_memories[i];
+    (arg->states).push_back(mem_attr);
+  }
 }
 
 void RNNAlgorithm::ArgCache::CacheScopes(const Scope& scope,
-                                         const rnn::Argument& arg) {
+                                         const Argument& arg) {
   auto scopes_var = scope.FindVar(arg.step_scopes);
   PADDLE_ENFORCE_NOT_NULL(
       scopes_var,
@@ -457,15 +483,6 @@ LoDTensor* RNNAlgorithm::ArgCache::GetTensor(const framework::Scope& scope,
   return var->GetMutable<LoDTensor>();
 }
 
-const std::array<rnn::ArgumentName, 2> RNNAlgorithm::kArgNames{
-    {rnn::ArgumentName{"step_unit", "step_scopes", "inputs", "outputs",
-                       "states", "ex_states", "initial_states"},
-     // NOTE the variable name step_scopes is unchanged between forward and
-     // backward.
-     rnn::ArgumentName{"step_unit", "step_scopes", "outputs@GRAD",
-                       "inputs@GRAD", "states", "ex_states",
-                       "initial_states@GRAD"}}};
-
 void DynamicRecurrentOp::Run(const framework::Scope& scope,
                              const platform::DeviceContext& dev_ctx) const {
   rnn.Run<RNNAlgorithm::ComputeMode::kForward>(
@@ -492,19 +509,41 @@ class DynamicRecurrentOpProtoAndCheckerMaker
         .AsDuplicable();
     AddInput(name.initial_states, "variables to initialize states.")
         .AsDuplicable();
-    AddInput("parameters", "parameter variables").AsDuplicable();
-
-    AddOutput(name.outlinks, "the outputs that need to concated for all steps.")
+    AddInput("parameters",
+             "the variables that used by every time step but located in parent "
+             "scope")
         .AsDuplicable();
-    AddOutput(name.step_scopes, "step scopes");
+
+    AddOutput(
+        name.outlinks,
+        "the output sequence of RNN. The sequence length must be the same.")
+        .AsDuplicable();
+    AddOutput(name.step_scopes,
+              "step scopes contains all local variables in each time step.");
 
     // Attributes stored in AttributeMap
-    AddAttr<std::vector<std::string>>(name.ex_states, "names of ex_states");
+    AddAttr<std::vector<std::string>>(
+        name.ex_states, string::Sprintf(
+                            R"DOC(The ex-state variable names.
+The ex-state means the state value in the ex-timestep or the previous time step
+[%s, %s, %s] must be the same order)DOC",
+                            name.ex_states, name.states, name.initial_states));
     AddAttr<std::vector<std::string>>(name.states, "names of states");
+
+    AddAttr<framework::BlockDescBind*>(name.block,
+                                       "name of the block for each time step");
 
     AddComment("This is a RNN operator for varience-length sequences.");
   }
 };
+
+const std::array<ArgumentName, 2> RNNAlgorithm::kArgNames{
+    {ArgumentName{"step_unit", "step_scopes", "inputs", "outputs", "states",
+                  "ex_states", "initial_states", "block"},
+     // NOTE the variable name step_scopes is unchanged between forward and
+     // backward.
+     ArgumentName{"step_unit", "step_scopes", "outputs@GRAD", "inputs@GRAD",
+                  "states", "ex_states", "initial_states@GRAD", "block"}}};
 
 }  // namespace operators
 }  // namespace paddle

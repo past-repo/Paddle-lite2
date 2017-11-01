@@ -7,8 +7,8 @@ import re
 
 __all__ = [
     'fc', 'data', 'cross_entropy', 'conv2d', 'pool2d', 'embedding', 'concat',
-    'StaticRNN', 'cast', 'sequence_conv', 'sequence_pool', 'sums', 'cos_sim',
-    'batch_norm', 'accuracy'
+    'StaticRNN', 'DynamicRNN', 'cast', 'sequence_conv', 'sequence_pool', 'sums',
+    'cos_sim', 'batch_norm', 'accuracy'
 ]
 
 
@@ -564,12 +564,16 @@ class StaticRNNMemoryLink(object):
         self.mem = mem
 
 
-class StaticRNN(object):
+class RNN(object):
     BEFORE_RNN_BLOCK = 0
     IN_RNN_BLOCK = 1
     AFTER_RNN_BLOCK = 2
 
-    def __init__(self, name=None, program=None):
+    def __init__(self, type):
+        assert type in {"recurrent", "dynamic_recurrent"}
+        self.type = type
+
+    def __call__(self, name=None, program=None):
         self.helper = LayerHelper("static_rnn", name=name, program=program)
         self.memories = {}  # memory map, from pre_mem.name --> MemoryLink
         self.inputs = []  # input variable list in current block
@@ -714,7 +718,7 @@ class StaticRNN(object):
             memories.append(mem.mem.name)
 
         parent_block.append_op(
-            type='recurrent',
+            type=self.type,
             inputs={
                 'inputs': inlinks,
                 'initial_states': boot_memories,
@@ -727,3 +731,7 @@ class StaticRNN(object):
                 'states': memories,
                 'step_block': rnn_block
             })
+
+
+StaticRNN = RNN("recurrent")
+DynamicRNN = RNN("dynamic_recurrent")

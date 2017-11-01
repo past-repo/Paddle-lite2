@@ -18,19 +18,55 @@
 #include "gtest/gtest.h"
 #endif
 
+#include "paddle/framework/executor.h"
 #include "paddle/framework/lod_tensor.h"
 #include "paddle/framework/operator.h"
 #include "paddle/framework/tensor_array.h"
 #include "paddle/framework/variable.h"
-#include "paddle/operators/rnn/recurrent_op_utils.h"
 
 namespace paddle {
 namespace operators {
 
+/**
+ * Memory of a RNN (same as the role of `Momory` in PaddlePaddle).
+ *
+ * Memory attributes cached by this op, dims will be infered from
+ * boot memories in father scope. Other attributes are copied from Op's proto
+ * attributes.
+ */
+struct StateAttr {
+  // name of current state variable
+  std::string var;
+  // name of previous step's state variable
+  std::string pre_var;
+  // name of the variables to init this memory (same role of `boot_layer` in
+  // PaddlePaddle), which is store in father's scope.
+  std::string boot_var;
+};
+
+struct Argument {
+  std::string step_unit;
+  std::string step_scopes;
+  std::vector<std::string> inlinks;
+  std::vector<std::string> outlinks;
+  std::vector<StateAttr> states;
+};
+
+struct ArgumentName {
+  std::string step_net;
+  std::string step_scopes;
+  std::string inlinks;
+  std::string outlinks;
+  std::string states;          // the memory name
+  std::string ex_states;       // the previous memory name
+  std::string initial_states;  // the boot memory name
+  std::string block;
+};
+
 class RNNAlgorithm {
  public:
   enum ComputeMode { kForward = 0, kBackward = 1 };
-  static const std::array<rnn::ArgumentName, 2> kArgNames;
+  static const std::array<ArgumentName, 2> kArgNames;
   using value_type = float;
 
   /*
@@ -72,31 +108,31 @@ class RNNAlgorithm {
   /*
    * Create state variables for each time step.
    */
-  void CreateState(const rnn::StateAttr& state, size_t step);
+  void CreateState(const StateAttr& state, size_t step);
 
   /*
    * Link pre-state variable in current scope to the state variable in the
    * previous time step (scope) by reference.
    */
-  void LinkState(const rnn::StateAttr& state, size_t step);
+  void LinkState(const StateAttr& state, size_t step);
 
   /*
    * Link state@GRAD when backwards, this will add `pre_state@GRAD` to
    * `state@GRAD` in the previous scope.
    */
-  void LinkGradState(const rnn::StateAttr& state, size_t step);
+  void LinkGradState(const StateAttr& state, size_t step);
 
   /*
    * Link the pre-state of the first time step to the `boot-state` in parent's
    * scope.
    */
-  void LinkInitialState(const rnn::StateAttr& state);
+  void LinkInitialState(const StateAttr& state);
 
   /*
    * Copy the gradient from `pre-state` in the first step-scope to the
    * `boot-state` in parent's scope, this is only used in backward mode.
    */
-  void ExportInitialStateGradient(const rnn::StateAttr& state);
+  void ExportInitialStateGradient(const StateAttr& state);
 
   /*
    * Create parameter gradient variables in step scopes to avoid the backward
@@ -114,6 +150,19 @@ class RNNAlgorithm {
    * Calculate time steps.
    */
   void RunSteps();
+
+  /*
+   * Create an executor and run one step.
+   */
+  void RunOneStep(const platform::DeviceContext& dev_ctx,
+                  const framework::OperatorBase& op,
+                  framework::Scope* step_scope) {
+    framework::Executor executor(dev_ctx);
+    auto* block = op.Attr<framework::BlockDescBind*>(kArgNames[mode_].step_net);
+    auto* program = block->Program();
+    executor.Run(*program, step_scope, block->ID(),
+                 false /*create_local_scope*/);
+  }
 
   /*
    * Concatenate outputs in each time step and generate a LoDTensor.
@@ -171,12 +220,13 @@ class RNNAlgorithm {
     std::map<std::string, framework::Variable*> inputs;
     std::map<std::string, framework::Variable*> outputs;
     platform::DeviceContext const* dev_ctx;
+    const framework::OperatorBase* op;
 
     size_t num_steps{0};
 
-    void Init(const rnn::ArgumentName& name, const framework::OperatorBase& op,
+    void Init(const ArgumentName& name, const framework::OperatorBase& op,
               const framework::Scope& scope,
-              platform::DeviceContext const* dev_ctx, rnn::Argument* arg,
+              platform::DeviceContext const* dev_ctx, Argument* arg,
               bool is_grad);
 
     framework::Scope& GetScope(size_t index) {
@@ -188,10 +238,10 @@ class RNNAlgorithm {
                                     const std::string& name);
 
    private:
-    void InitArgument(const rnn::ArgumentName& name,
-                      const framework::OperatorBase& op, rnn::Argument* arg,
+    void InitArgument(const ArgumentName& name,
+                      const framework::OperatorBase& op, Argument* arg,
                       bool is_grad);
-    void CacheScopes(const framework::Scope& scope, const rnn::Argument& arg);
+    void CacheScopes(const framework::Scope& scope, const Argument& arg);
     void CacheInlinks(const framework::Scope& scope,
                       const std::vector<std::string>& names);
     void CacheOutlinks(const framework::Scope& scope,
@@ -202,6 +252,7 @@ class RNNAlgorithm {
 
  private:
   std::unique_ptr<framework::OperatorBase> step_unit_;
+  std::unique_ptr<framework::Executor> step_executor_;
   std::map<std::string, framework::TensorArray> states_;
   std::map<std::string, framework::TensorArray> pre_states_;
   std::map<std::string, framework::TensorArray> step_inputs_;
@@ -209,7 +260,7 @@ class RNNAlgorithm {
   std::map<std::string, std::vector<framework::DySeqMeta>> dy_seq_metas_;
   // name of parameter variables
   std::vector<std::string> parameters_;
-  rnn::Argument arg_;
+  Argument arg_;
   ArgCache cache_;
   ComputeMode mode_{ComputeMode::kForward};
 
