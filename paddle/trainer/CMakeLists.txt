@@ -41,7 +41,8 @@ add_style_check_target(paddle_trainer_lib
 add_style_check_target(paddle_trainer_lib
     ${TRAINER_HEADERS})
 add_dependencies(paddle_trainer_lib
-    gen_proto_cpp)
+    paddle_proto
+    ${external_project_dependencies})
 
 macro(add_paddle_exe TARGET_NAME)
   add_executable(${TARGET_NAME} ${ARGN})
@@ -49,22 +50,22 @@ macro(add_paddle_exe TARGET_NAME)
   link_paddle_exe(${TARGET_NAME})
 endmacro()
 
-add_paddle_exe(paddle_trainer
-    TrainerMain.cpp)
-
-add_paddle_exe(paddle_merge_model
-    MergeModel.cpp)
-
 if(WITH_TESTING)
-    add_subdirectory(tests)
+  add_subdirectory(tests)
 endif()
-install(TARGETS paddle_trainer paddle_merge_model
-    RUNTIME DESTINATION opt/paddle/bin
-    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-        GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 
-set_target_properties(paddle_trainer PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
-set_target_properties(paddle_merge_model PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+if(NOT WITH_C_API)
+  add_paddle_exe(paddle_trainer TrainerMain.cpp)
+  add_paddle_exe(paddle_merge_model MergeModel.cpp)
+
+  install(TARGETS paddle_trainer paddle_merge_model
+          RUNTIME DESTINATION opt/paddle/bin
+          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+          GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+
+  set_target_properties(paddle_trainer PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set_target_properties(paddle_merge_model PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 
 if(APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "-framework CoreFoundation -framework Security")
@@ -72,6 +73,8 @@ endif()
 
 if(WITH_GOLANG)
   add_dependencies(paddle_trainer_lib paddle_pserver_cclient)
-  target_link_libraries(paddle_trainer ${CMAKE_BINARY_DIR}/go/pserver/cclient/libpaddle_pserver_cclient.a)
-  target_link_libraries(paddle_trainer_lib ${CMAKE_BINARY_DIR}/go/pserver/cclient/libpaddle_pserver_cclient.a)
+  target_link_libraries(paddle_trainer_lib paddle_pserver_cclient)
+  if(NOT WITH_C_API)
+    target_link_libraries(paddle_trainer paddle_pserver_cclient)
+  endif()
 endif(WITH_GOLANG)

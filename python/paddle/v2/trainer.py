@@ -2,12 +2,6 @@
 Module Trainer
 """
 import collections
-import gzip
-import os
-
-import py_paddle.swig_paddle as api
-
-from data_feeder import DataFeeder
 from topology import Topology
 from . import event as v2_event
 from . import optimizer as v2_optimizer
@@ -33,15 +27,24 @@ class SGD(object):
     SGD Trainer combines data reader, network topolopy and update_equation together
     to train/test a neural network.
 
-    :param update_equation: The optimizer object.
-    :type update_equation: paddle.v2.optimizer.Optimizer
     :param cost: Target cost that neural network should be optimized.
     :type cost: paddle.v2.config_base.Layer
     :param parameters: The parameters dictionary.
     :type parameters: paddle.v2.parameters.Parameters
+    :param update_equation: The optimizer object.
+    :type update_equation: paddle.v2.optimizer.Optimizer
     :param extra_layers: Some layers in the neural network graph are not
                          in the path of cost layer.
     :type extra_layers: paddle.v2.config_base.Layer
+    :param is_local: Whether trainning locally
+    :type is_local: bool
+    :param pserver_spec: comma string for pserver location,
+                         eg:127.10.0.10:3000,127.10.0.11:3000,
+                         and this parameter is only used for fault
+                         tolerant mode cluster training.
+    :type pserver_spec: string
+    :param use_etcd: Whether using etcd pserver.
+    :param use_etcd: bool
     """
 
     def __init__(self,
@@ -50,7 +53,8 @@ class SGD(object):
                  update_equation,
                  extra_layers=None,
                  is_local=True,
-                 pserver_spec=None):
+                 pserver_spec=None,
+                 use_etcd=True):
 
         if not isinstance(parameters, v2_parameters.Parameters):
             raise TypeError('parameters should be parameters')
@@ -58,13 +62,20 @@ class SGD(object):
         if not isinstance(update_equation, v2_optimizer.Optimizer):
             raise TypeError("update equation parameter must be "
                             "paddle.v2.optimizer.Optimizer")
+        import py_paddle.swig_paddle as api
         topology = Topology(cost, extra_layers=extra_layers)
+        # HACK(typhoonzero): update ParameterConfig(proto) in case of optimizers
+        # are defined after layers, or between layers.
+        topology.update_from_default()
+        parameters.update_param_conf(topology.proto())
+
         self.__optimizer__ = update_equation
         self.__topology__ = topology
         self.__parameters__ = parameters
         self.__topology_in_proto__ = topology.proto()
         self.__is_local__ = is_local
         self.__pserver_spec__ = pserver_spec
+        self.__use_etcd__ = use_etcd
 
         self.__use_sparse_updater__ = self.__topology__.use_sparse_updater()
         # # In local mode, disable sparse_remote_update.
@@ -84,6 +95,9 @@ class SGD(object):
         self.__gradient_machine__.randParameters()
         self.__parameters__.append_gradient_machine(gm)
         self.__parameter_updater__ = None
+
+    def get_topology_proto(self):
+        return self.__topology_in_proto__
 
     def __use_remote_sparse_updater__(self):
         return self.__use_sparse_updater__ and not self.__is_local__
@@ -123,13 +137,15 @@ class SGD(object):
         :type feeding: dict|list
         :return:
         """
+        import py_paddle.swig_paddle as api
+        from data_feeder import DataFeeder
         if event_handler is None:
             event_handler = default_event_handler
         __check_train_args__(**locals())
 
         self.__parameter_updater__ = self.__optimizer__.create_updater(
             self.__is_local__, num_passes, self.__use_sparse_updater__,
-            self.__pserver_spec__)
+            self.__pserver_spec__, self.__use_etcd__)
         self.__parameter_updater__.init(self.__gradient_machine__)
 
         self.__gradient_machine__.start()
@@ -156,6 +172,11 @@ class SGD(object):
                                                           pass_type)
                 self.__gradient_machine__.eval(pass_evaluator)
                 self.__gradient_machine__.eval(batch_evaluator)
+                event_handler(
+                    v2_event.EndForwardBackward(
+                        pass_id=pass_id,
+                        batch_id=batch_id,
+                        gm=self.__gradient_machine__))
                 for each_param in self.__gradient_machine__.getNonStaticParameters(
                 ):
                     self.__parameter_updater__.update(each_param)
@@ -168,24 +189,32 @@ class SGD(object):
                         pass_id=pass_id,
                         batch_id=batch_id,
                         cost=cost,
-                        evaluator=batch_evaluator))
+                        evaluator=batch_evaluator,
+                        gm=self.__gradient_machine__))
 
             self.__parameter_updater__.finishPass()
             pass_evaluator.finish()
-            event_handler(v2_event.EndPass(pass_id, evaluator=pass_evaluator))
+            event_handler(
+                v2_event.EndPass(
+                    pass_id,
+                    evaluator=pass_evaluator,
+                    gm=self.__gradient_machine__))
         self.__gradient_machine__.finish()
 
     def test(self, reader, feeding=None):
         """
         Testing method. Will test input data.
 
-        :param reader: A reader that reads and yeilds data items.
+        :param reader: A batch reader that reads and yeilds data items,
+                       it should be a paddle.v2.batch.
         :type reader: collections.Iterable
         :param feeding: Feeding is a map of neural network input name and array
                         index that reader returns.
         :type feeding: dict
         :return:
         """
+        import py_paddle.swig_paddle as api
+        from data_feeder import DataFeeder
         feeder = DataFeeder(self.__data_types__, feeding)
         evaluator = self.__gradient_machine__.makeEvaluator()
         out_args = api.Arguments.createArguments(0)

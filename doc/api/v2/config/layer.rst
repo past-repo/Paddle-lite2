@@ -82,6 +82,11 @@ maxout
 ..  autoclass:: paddle.v2.layer.maxout
     :noindex:
 
+roi_pool
+--------
+..  autoclass:: paddle.v2.layer.roi_pool
+    :noindex:
+
 Norm Layer
 ==========
 
@@ -103,6 +108,11 @@ sum_to_one_norm
 cross_channel_norm
 ------------------
 ..  autoclass:: paddle.v2.layer.cross_channel_norm
+    :noindex:
+
+row_l2_norm
+-----------
+..  autoclass:: paddle.v2.layer.row_l2_norm
     :noindex:
     
 Recurrent Layers
@@ -198,6 +208,10 @@ identity_projection
 ..  autoclass:: paddle.v2.layer.identity_projection
     :noindex:
 
+slice_projection
+-------------------
+..  autoclass:: paddle.v2.layer.slice_projection
+    :noindex:
 
 table_projection
 ----------------
@@ -246,6 +260,21 @@ concat
 seq_concat
 ----------
 ..  autoclass:: paddle.v2.layer.seq_concat
+    :noindex:
+
+seq_slice
+---------
+..  autoclass:: paddle.v2.layer.seq_slice
+    :noindex:
+
+kmax_sequence_score
+-------------------
+..  autoclass:: paddle.v2.layer.kmax_sequence_score
+    :noindex:
+
+sub_nested_seq
+--------------
+..  autoclass:: paddle.v2.layer.sub_nested_seq
     :noindex:
 
 Reshaping Layers
@@ -306,6 +335,16 @@ bilinear_interp
 ..  autoclass:: paddle.v2.layer.bilinear_interp
     :noindex:
 
+dot_prod
+---------
+.. autoclass:: paddle.v2.layer.dot_prod
+    :noindex:
+
+out_prod
+--------
+.. autoclass:: paddle.v2.layer.out_prod
+    :noindex:
+
 power
 -----
 ..  autoclass:: paddle.v2.layer.power
@@ -314,6 +353,16 @@ power
 scaling
 -------
 ..  autoclass:: paddle.v2.layer.scaling
+    :noindex:
+
+clip
+----
+..  autoclass:: paddle.v2.layer.clip
+    :noindex:
+
+resize
+------
+..  autoclass:: paddle.v2.layer.resize
     :noindex:
 
 slope_intercept
@@ -333,9 +382,19 @@ cos_sim
 ..  autoclass:: paddle.v2.layer.cos_sim
     :noindex:
 
+l2_distance
+-----------
+..  autoclass:: paddle.v2.layer.l2_distance
+    :noindex:
+
 trans
 -----
 ..  autoclass:: paddle.v2.layer.trans
+    :noindex:
+
+scale_shift
+-----------
+..  autoclass:: paddle.v2.layer.scale_shift
     :noindex:
 
 Sampling Layers
@@ -385,9 +444,14 @@ multi_binary_label_cross_entropy_cost
 ..  autoclass:: paddle.v2.layer.multi_binary_label_cross_entropy_cost
     :noindex:
 
-huber_cost
-----------
-..  autoclass:: paddle.v2.layer.huber_cost
+huber_regression_cost
+-------------------------
+..  autoclass:: paddle.v2.layer.huber_regression_cost
+    :noindex:
+
+huber_classification_cost
+-------------------------
+..  autoclass:: paddle.v2.layer.huber_classification_cost
     :noindex:
 
 lambda_cost
@@ -395,9 +459,9 @@ lambda_cost
 ..  autoclass:: paddle.v2.layer.lambda_cost
     :noindex:
 
-mse_cost
+square_error_cost
 --------
-..  autoclass:: paddle.v2.layer.mse_cost
+..  autoclass:: paddle.v2.layer.square_error_cost
     :noindex:
 
 rank_cost
@@ -445,6 +509,11 @@ smooth_l1_cost
 ..  autoclass:: paddle.v2.layer.smooth_l1_cost
     :noindex:
 
+multibox_loss
+--------------
+..  autoclass:: paddle.v2.layer.multibox_loss
+    :noindex:
+
 Check Layer
 ============
 
@@ -467,4 +536,17 @@ Activation with learnable parameter
 prelu
 --------
 ..  autoclass:: paddle.v2.layer.prelu
+    :noindex:
+
+gated_unit
+-----------
+..  autoclass:: paddle.v2.layer.gated_unit
+    :noindex:
+
+Detection output Layer
+======================
+
+detection_output
+----------------
+..  autoclass:: paddle.v2.layer.detection_output
     :noindex:

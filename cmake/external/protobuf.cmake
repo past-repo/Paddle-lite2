@@ -13,6 +13,69 @@
 # limitations under the License.
 
 INCLUDE(ExternalProject)
+# Always invoke `FIND_PACKAGE(Protobuf)` for importing function protobuf_generate_cpp
+FIND_PACKAGE(Protobuf QUIET)
+SET(PROTOBUF_FOUND "OFF")
+
+if(NOT COMMAND protobuf_generate_python)  # before cmake 3.4, protobuf_genrerate_python is not defined.
+    function(protobuf_generate_python SRCS)
+        # shameless copy from https://github.com/Kitware/CMake/blob/master/Modules/FindProtobuf.cmake
+        if(NOT ARGN)
+            message(SEND_ERROR "Error: PROTOBUF_GENERATE_PYTHON() called without any proto files")
+            return()
+        endif()
+
+        if(PROTOBUF_GENERATE_CPP_APPEND_PATH)
+            # Create an include path for each file specified
+            foreach(FIL ${ARGN})
+                get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+                get_filename_component(ABS_PATH ${ABS_FIL} PATH)
+                list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+                if(${_contains_already} EQUAL -1)
+                    list(APPEND _protobuf_include_path -I ${ABS_PATH})
+                endif()
+            endforeach()
+        else()
+            set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
+        endif()
+
+        if(DEFINED PROTOBUF_IMPORT_DIRS AND NOT DEFINED Protobuf_IMPORT_DIRS)
+            set(Protobuf_IMPORT_DIRS "${PROTOBUF_IMPORT_DIRS}")
+        endif()
+
+        if(DEFINED Protobuf_IMPORT_DIRS)
+            foreach(DIR ${Protobuf_IMPORT_DIRS})
+                get_filename_component(ABS_PATH ${DIR} ABSOLUTE)
+                list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+                if(${_contains_already} EQUAL -1)
+                    list(APPEND _protobuf_include_path -I ${ABS_PATH})
+                endif()
+            endforeach()
+        endif()
+
+        set(${SRCS})
+        foreach(FIL ${ARGN})
+            get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+            get_filename_component(FIL_WE ${FIL} NAME_WE)
+            if(NOT PROTOBUF_GENERATE_CPP_APPEND_PATH)
+                get_filename_component(FIL_DIR ${FIL} DIRECTORY)
+                if(FIL_DIR)
+                    set(FIL_WE "${FIL_DIR}/${FIL_WE}")
+                endif()
+            endif()
+
+            list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py")
+            add_custom_command(
+                    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py"
+                    COMMAND  ${Protobuf_PROTOC_EXECUTABLE} --python_out ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
+                    DEPENDS ${ABS_FIL} ${Protobuf_PROTOC_EXECUTABLE}
+                    COMMENT "Running Python protocol buffer compiler on ${FIL}"
+                    VERBATIM )
+        endforeach()
+
+        set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+    endfunction()
+endif()
 
 # Print and set the protobuf library information,
 # finish this cmake process and exit from this file.
@@ -39,12 +102,19 @@ macro(PROMPT_PROTOBUF_LIB)
     ADD_LIBRARY(protobuf_lite ${protobuf_LIBTYPE} IMPORTED GLOBAL)
     SET_PROPERTY(TARGET protobuf_lite PROPERTY IMPORTED_LOCATION ${PROTOBUF_LITE_LIBRARY})
 
-    ADD_LIBRARY(protoc ${protobuf_LIBTYPE} IMPORTED GLOBAL)
-    SET_PROPERTY(TARGET protoc PROPERTY IMPORTED_LOCATION ${PROTOC_LIBRARY})
+    ADD_LIBRARY(libprotoc ${protobuf_LIBTYPE} IMPORTED GLOBAL)
+    SET_PROPERTY(TARGET libprotoc PROPERTY IMPORTED_LOCATION ${PROTOC_LIBRARY})
+
+    ADD_EXECUTABLE(protoc IMPORTED GLOBAL)
+    SET_PROPERTY(TARGET protoc PROPERTY IMPORTED_LOCATION ${PROTOBUF_PROTOC_EXECUTABLE})
+    # FIND_Protobuf.cmake uses `Protobuf_PROTOC_EXECUTABLE`.
+    # make `protobuf_generate_cpp` happy.
+    SET(Protobuf_PROTOC_EXECUTABLE ${PROTOBUF_PROTOC_EXECUTABLE})
 
     FOREACH(dep ${protobuf_DEPS})
         ADD_DEPENDENCIES(protobuf ${dep})
         ADD_DEPENDENCIES(protobuf_lite ${dep})
+        ADD_DEPENDENCIES(libprotoc ${dep})
         ADD_DEPENDENCIES(protoc ${dep})
     ENDFOREACH()
 
@@ -103,7 +173,8 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
             "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
             "-Dprotobuf_WITH_ZLIB=ON"
-            "-DZLIB_ROOT:FILEPATH=${ZLIB_ROOT}")
+            "-DZLIB_ROOT:FILEPATH=${ZLIB_ROOT}"
+            ${EXTERNAL_OPTIONAL_ARGS})
         SET(OPTIONAL_CACHE_ARGS "-DZLIB_ROOT:STRING=${ZLIB_ROOT}")
     ENDIF()
 
@@ -120,12 +191,12 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             ${OPTIONAL_ARGS}
             -Dprotobuf_BUILD_TESTS=OFF
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
             -DCMAKE_INSTALL_PREFIX=${PROTOBUF_INSTALL_DIR}
             -DCMAKE_INSTALL_LIBDIR=lib
         CMAKE_CACHE_ARGS
             -DCMAKE_INSTALL_PREFIX:PATH=${PROTOBUF_INSTALL_DIR}
-            -DCMAKE_BUILD_TYPE:STRING=Release
+            -DCMAKE_BUILD_TYPE:STRING=${THIRD_PARTY_BUILD_TYPE}
             -DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF
             -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
             ${OPTIONAL_CACHE_ARGS}
@@ -133,18 +204,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
 ENDFUNCTION()
 
 SET(PROTOBUF_VERSION 3.1)
-IF(NOT CMAKE_CROSSCOMPILING)
-    FIND_PACKAGE(Protobuf ${PROTOBUF_VERSION})
-
-    IF(PROTOBUF_FOUND)
-        SET_PROTOBUF_VERSION()
-        IF("${PROTOBUF_VERSION}" VERSION_LESS "3.1.0")
-            SET(PROTOBUF_FOUND OFF)
-        ELSE()
-            PROMPT_PROTOBUF_LIB()
-        ENDIF()
-    ENDIF(PROTOBUF_FOUND)
-ELSE()
+IF(CMAKE_CROSSCOMPILING)
     build_protobuf(protobuf_host TRUE)
     LIST(APPEND external_project_dependencies protobuf_host)
 
@@ -163,6 +223,15 @@ IF(NOT PROTOBUF_FOUND)
         CACHE FILEPATH "protobuf library." FORCE)
     SET(PROTOBUF_PROTOC_LIBRARY ${extern_protobuf_PROTOC_LIBRARY}
         CACHE FILEPATH "protoc library." FORCE)
+
+    IF(WITH_C_API)
+        INSTALL(DIRECTORY ${PROTOBUF_INCLUDE_DIR} DESTINATION third_party/protobuf)
+        IF(ANDROID)
+            INSTALL(FILES ${PROTOBUF_LIBRARY} DESTINATION third_party/protobuf/lib/${ANDROID_ABI})
+        ELSE()
+            INSTALL(FILES ${PROTOBUF_LIBRARY} DESTINATION third_party/protobuf/lib)
+        ENDIF()
+    ENDIF()
 
     IF(CMAKE_CROSSCOMPILING)
         PROMPT_PROTOBUF_LIB(protobuf_host extern_protobuf)
