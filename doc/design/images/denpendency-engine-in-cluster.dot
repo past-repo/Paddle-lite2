@@ -1,0 +1,38 @@
+digraph G {
+  label = "nodes in a cluster"
+
+  node [shape=circle]
+
+  subgraph cluster0 {
+    label = "node 0"
+    send_op0[label="send" shape=box style=filled color=grey]
+    a -> send_op0
+    DE0[label="DE" shape=box color=green style=filled]
+  }
+
+  subgraph cluster1 {
+    label = "node 1"
+    send_op1[label="send" shape=box style=filled color=grey]
+    b -> send_op1
+    DE1[label="DE" shape=box color=green style=filled]
+  }
+
+  subgraph cluster2 {
+    label = "node 2"
+    receive0 [label="receive" shape=box style=filled color=grey]
+    receive1 [label="receive" shape=box style=filled color=grey]
+
+    receive0 -> A
+    receive1 -> B
+
+    send_op0 -> receive0 [label="network"]
+    send_op1 -> receive1 [label="network"]
+
+    op [shape=box style=filled color=blue label="op3"]
+    A -> op
+    B -> op
+    op -> C
+    DE2[label="DE" shape=box color=green style=filled]
+  }
+
+}
