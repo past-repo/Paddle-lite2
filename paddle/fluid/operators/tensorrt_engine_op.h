@@ -14,11 +14,12 @@
 
 #pragma once
 
-#ifdef PADDLE_WITH_CUDA
-
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/inference/analysis/helper.h"
+
+#if PADDLE_WITH_CUDA
 #include "paddle/fluid/inference/tensorrt/engine.h"
+#endif
 
 namespace paddle {
 namespace operators {
@@ -40,6 +41,7 @@ class TensorRTEngineOp : public framework::OperatorWithKernel {
   }
 };
 
+#ifdef PADDLE_WITH_CUDA
 template <typename DeviceContext, typename T>
 class TensorRTEngineKernel : public framework::OpKernel<T> {
  public:
@@ -104,7 +106,7 @@ class TensorRTEngineKernel : public framework::OpKernel<T> {
   mutable int max_batch_{0};
 };
 
+#endif  // PADDLE_WITH_CUDA
+
 }  // namespace operators
 }  // namespace paddle
-
-#endif  // PADDLE_WITH_CUDA

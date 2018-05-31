@@ -12,16 +12,17 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-#ifdef PADDLE_WITH_CUDA
-
 #include "paddle/fluid/operators/tensorrt_engine_op.h"
 #include "paddle/fluid/framework/op_registry.h"
+#ifdef PADDLE_WITH_CUDA
 #include "paddle/fluid/inference/tensorrt/convert/op_converter.h"
 #include "paddle/fluid/inference/utils/singleton.h"
+#endif  // PADDLE_WITH_CUDA
 
 namespace paddle {
 namespace operators {
 
+#ifdef PADDLE_WITH_CUDA
 template <typename DeviceContext, typename T>
 void paddle::operators::TensorRTEngineKernel<DeviceContext, T>::Prepare(
     const framework::ExecutionContext &context) const {
@@ -35,6 +36,7 @@ void paddle::operators::TensorRTEngineKernel<DeviceContext, T>::Prepare(
       block, engine_.get());
   engine_->FreezeNetwork();
 }
+#endif  // PADDLE_WITH_CUDA
 
 class TensorRTEngineOpMaker : public framework::OpProtoAndCheckerMaker {
  public:
@@ -60,7 +62,9 @@ namespace ops = paddle::operators;
 REGISTER_OPERATOR(tensorrt_engine, ops::TensorRTEngineOp,
                   ops::TensorRTEngineOpMaker, ops::TensorRTEngineOpMaker);
 
-REGISTER_OP_CPU_KERNEL(
+#if PADDLE_WITH_CUDA
+
+REGISTER_OP_CUDA_KERNEL(
     tensorrt_engine,
     ops::TensorRTEngineKernel<paddle::platform::CPUDeviceContext, float>,
     ops::TensorRTEngineKernel<paddle::platform::CPUDeviceContext, double>,
