@@ -57,8 +57,7 @@ std::string num2str(T a) {
 bool NativePaddlePredictor::Init() {
   VLOG(3) << "Predictor::init()";
 
-  // TODO(panyx0718): Should CPU vs GPU device be decided by id?
-  if (config_.device >= 0) {
+  if (config_.use_gpu) {
     place_ = paddle::platform::CUDAPlace(config_.device);
   } else {
     place_ = paddle::platform::CPUPlace();
