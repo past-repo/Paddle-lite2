@@ -52,7 +52,11 @@ namespace framework {
  *    0 2 4 7
  *    0 2 5 7 10 12 15 20
  */
+#if defined(PADDLE_WITH_CUDA)
 using LoD = std::vector<Vector<size_t>>;
+#else
+using LoD = std::vector<std::vector<size_t>>;
+#endif
 
 std::ostream& operator<<(std::ostream& os, const LoD& lod);
 std::ostream& operator<<(std::ostream& os, const LoDTensor& t);
