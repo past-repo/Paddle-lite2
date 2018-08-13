@@ -20,12 +20,18 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+DEFINE_string(inference_analysis_model_dir, "", "model dir");
+
+
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   using paddle::inference::analysis::Analyzer;
   using paddle::inference::analysis::Argument;
 
   Argument argument;
+  argument.fluid_model_dir.reset(
+      new std::string(FLAGS_inference_analysis_model_dir));
+
   Analyzer analyzer;
   analyzer.Run(&argument);
 

@@ -122,6 +122,7 @@ bool NativePaddlePredictor::Run(const std::vector<PaddleTensor> &inputs,
   }
   for (size_t i = 0; i < feed_target_names_.size(); ++i) {
     VLOG(4) << "setting " << i << "-th target";
+    LOG(INFO) << "set input: " << feed_target_names_[i];
     feed_targets[feed_target_names_[i]] = &feeds[i];
   }
   // get fetch variable
@@ -130,6 +131,7 @@ bool NativePaddlePredictor::Run(const std::vector<PaddleTensor> &inputs,
   fetchs.resize(fetch_target_names_.size());
   for (size_t i = 0; i < fetch_target_names_.size(); ++i) {
     fetch_targets[fetch_target_names_[i]] = &fetchs[i];
+    LOG(INFO) << "get output: " << fetch_target_names_[i];
   }
   // Run the inference program
   // if share variables, we need not create variables

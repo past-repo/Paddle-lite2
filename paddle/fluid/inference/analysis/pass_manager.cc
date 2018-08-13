@@ -34,7 +34,7 @@ bool PassManager::Initialize(Argument* argument) {
 void DfgPassManager::RunAll() {
   PADDLE_ENFORCE(argument_);
   for (auto& pass : data_) {
-    VLOG(4) << "Running pass [" << pass->repr() << "]";
+    LOG(INFO) << "Running pass [" << pass->repr() << "]";
     pass->Run(argument_->main_dfg.get());
   }
 }
