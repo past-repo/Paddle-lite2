@@ -142,15 +142,31 @@ void OperatorBase::Run(const Scope& scope, const platform::Place& place) {
   platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();
   // Generate event name
   std::stringstream event_name;
-  if (FLAGS_profile_with_details) {
-    for (auto id : platform::GetBlockStack()) {
-      event_name << id << "/";
-    }
-    event_name << Type() << "#" << id_;
-  } else {
-    event_name << Type();
+  switch (FLAGS_profile_with_details) {
+    case 0:
+      event_name << Type();
+      break;
+    case 1: {
+      for (auto id : platform::GetBlockStack()) {
+        event_name << id << "/";
+      }
+      event_name << Type();
+    } break;
+    case 2: {
+      for (auto id : platform::GetBlockStack()) {
+        event_name << id << "/";
+      }
+      event_name << Type() << "#" << id_;
+    } break;
+    default:
+      LOG(ERROR) << "unknow profile level";
   }
+  std::string block_key =
+      "block#" + (platform::GetBlockStack().empty()
+                      ? "-"
+                      : std::to_string(platform::GetBlockStack().back()));
   platform::RecordEvent record_event(event_name.str(), pool.Get(place));
+  platform::RecordEvent block_event(block_key, pool.Get(place));
   RunImpl(scope, place);
   VLOG(3) << place << " " << DebugStringEx(&scope);
 }

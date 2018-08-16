@@ -19,6 +19,8 @@ limitations under the License. */
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/framework/var_type.h"
 #include "paddle/fluid/operators/detail/safe_ref.h"
+#include "paddle/fluid/platform/profiler.h"
+#include "paddle/fluid/platform/device_tracer.h"
 
 namespace paddle {
 namespace operators {
@@ -57,6 +59,8 @@ class WhileOp : public framework::OperatorBase {
 
     PADDLE_ENFORCE(platform::is_cpu_place(cond.place()),
                    "Condition of while op must in CPU memory.");
+    platform::RecordEvent _("While-block", nullptr);
+
     while (cond.data<bool>()[0]) {
       auto &current_scope = scope.NewScope();
       step_scopes->push_back(&current_scope);
@@ -300,6 +304,7 @@ class WhileGradOpVarTypeInference : public framework::VarTypeInference {
  public:
   void operator()(const framework::OpDesc &op_desc,
                   framework::BlockDesc *block) const override {
+    platform::RecordEvent _("While-infershape", nullptr);
     auto p_names = op_desc.Input(kX);
     auto pg_names = op_desc.Output(framework::GradVarName(kX));
 

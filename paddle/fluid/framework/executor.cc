@@ -125,6 +125,7 @@ void Executor::CreateVariables(const ProgramDesc& pdesc, Scope* scope,
 void Executor::Run(const ProgramDesc& pdesc, Scope* scope, int block_id,
                    bool create_local_scope, bool create_vars) {
   platform::RecordBlock b(block_id);
+  platform::RecordEvent _("block#"+std::to_string(block_id), nullptr);
   if (FLAGS_use_mkldnn) EnableMKLDNN(pdesc);
   auto ctx = Prepare(pdesc, block_id);
   RunPreparedContext(ctx.get(), scope, create_local_scope, create_vars);

@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <gflags/gflags.h>
 #include <glog/logging.h>  // use glog instead of PADDLE_ENFORCE to avoid importing other paddle header files.
+#include <gtest/gtest.h>
 #include <glog/raw_logging.h>
 #include <pthread.h>
 #include <atomic>
@@ -22,12 +23,36 @@
 #include <numeric>
 #include <numeric>
 #include <thread>
-#include "paddle/fluid/inference/paddle_inference_api.h"
-#include "paddle/fluid/inference/paddle_inference_helper.h"
+#include <sys/time.h>
+#include "paddle/fluid/inference/api/paddle_inference_api.h"
+#include "paddle/fluid/platform/profiler.h"
+
 DEFINE_string(modeldir, "", "Directory of the inference model.");
 DEFINE_string(datapath, "", "Path of the dataset.");
 DEFINE_int32(batch_size, 1, "batch size");
 DEFINE_int32(num_threads, 1, "thread number");
+
+// Timer for timer
+class Timer {
+ public:
+  double start;
+  double startu;
+  void tic() {
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    start = tp.tv_sec;
+    startu = tp.tv_usec;
+  }
+  double toc() {
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    double used_time_ms =
+        (tp.tv_sec - start) * 1000.0 + (tp.tv_usec - startu) / 1000.0;
+    return used_time_ms;
+  }
+};
+
+
 namespace paddle {
 void split(const std::string &str, char sep, std::vector<std::string> *pieces) {
   pieces->clear();
@@ -185,22 +210,16 @@ void PrepareInputs(std::vector<PaddleTensor> *input_slots, DataRecord *data,
   // clang-format off
   std::vector<int> rnn_link_data_shape
       ({static_cast<int>(one_batch.rnn_link_data.size()), static_cast<int>(one_batch.rnn_link_data.front().size())});
-  LOG(INFO) << "set 1";
   lod_attention_tensor.shape.assign({1, 2});
   lod_attention_tensor.lod.assign({one_batch.lod1, one_batch.lod2});
-  LOG(INFO) << "set 1";
   init_zero_tensor.shape.assign({batch_size, 15});
   init_zero_tensor.lod.assign({one_batch.lod3});
-  LOG(INFO) << "set 1";
   lod_tensor_tensor.shape = rnn_link_data_shape;
   lod_tensor_tensor.lod.assign({one_batch.lod1});
-  LOG(INFO) << "set 1";
   week_tensor.shape.assign({(int) one_batch.rnn_week_datas.size(), (int) one_batch.rnn_week_datas.front().size()});
   week_tensor.lod.assign({one_batch.lod3});
-  LOG(INFO) << "set 1";
   minute_tensor.shape.assign({(int) one_batch.rnn_minute_datas.size(),
                               (int) one_batch.rnn_minute_datas.front().size()});
-  LOG(INFO) << "set 2";
   minute_tensor.lod.assign({one_batch.lod3});
   // assign data
   LOG(INFO) << "to assian data";
@@ -235,17 +254,18 @@ void Main1(int batch_size) {
   DataRecord data(FLAGS_datapath, batch_size);
   // Run multiple time to cancel the memory malloc or initialization of the
   // first time.
-  const int times = 10;
-  double whole_time = 0.;
+  //double whole_time = 0.;
   LOG(INFO) << "prepare input";
   PrepareInputs(&input_slots, &data, batch_size);
   std::vector<PaddleTensor> outputs;
-  //Timer timer;
-  //timer.tic();
+  Timer timer;
+  timer.tic();
   LOG(INFO) << "run";
-  predictor->Run(input_slots, &outputs);
-  //whole_time += timer.toc();
-  //LOG(INFO) << "time: " << whole_time / times;
+  for (int i = 0; i < 1000; i++) {
+    predictor->Run(input_slots, &outputs);
+  }
+  FLAGS_profile_total = timer.toc();
+  LOG(INFO) << "time: " << FLAGS_profile_total / 1000;
 }
 void MainMultiThread(int batch_size) {
   std::vector<std::thread> threads;
@@ -286,10 +306,17 @@ void MainMultiThread(int batch_size) {
   }
   RAW_LOG_INFO("average time: %f", whole_time / FLAGS_num_threads);
 }
+
+TEST(hh, hh) {
+  Main1(10);
+}
 }  // namespace paddle
+
+/*
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   //paddle::Main1(1);
   paddle::MainMultiThread(FLAGS_batch_size);
   return 0;
 }
+ */

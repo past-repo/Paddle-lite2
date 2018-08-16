@@ -30,6 +30,9 @@ limitations under the License. */
 #include "paddle/fluid/platform/device_tracer.h"
 #include "paddle/fluid/string/printf.h"
 
+DEFINE_double(profile_total, 0.,
+              "profile total time, set this to correct the real total.");
+
 namespace paddle {
 namespace platform {
 
@@ -438,7 +441,9 @@ void ParseEvents(const std::vector<std::vector<Event>>& events,
   }
 
   // Print report
-  PrintProfiler(events_table, sorted_domain, max_name_width + 4, 12, total);
+  PrintProfiler(
+      events_table, sorted_domain, max_name_width + 4, 12,
+      FLAGS_profile_total < 0.000000001 ? total : FLAGS_profile_total);
 }
 
 void DisableProfiler(EventSortingKey sorted_key,

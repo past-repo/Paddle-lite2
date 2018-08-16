@@ -19,6 +19,8 @@ limitations under the License. */
 #include <vector>
 #include "paddle/fluid/platform/device_context.h"
 
+DECLARE_double(profile_total);
+
 namespace paddle {
 namespace platform {
 
