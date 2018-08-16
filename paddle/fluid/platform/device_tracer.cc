@@ -27,6 +27,9 @@ limitations under the License. */
 #include "paddle/fluid/framework/block_desc.h"
 #include "paddle/fluid/string/printf.h"
 
+DEFINE_bool(profile_with_details, false,
+            "profile with details, such as block information");
+
 namespace paddle {
 namespace platform {
 namespace {
@@ -382,7 +385,14 @@ std::string CurAnnotation() {
 
 void SetCurBlock(int block_id) { block_id_stack.push_back(block_id); }
 
+int GetCurBlock() {
+  PADDLE_ENFORCE(!block_id_stack.empty());
+  return block_id_stack.back();
+}
+
 void ClearCurBlock() { block_id_stack.pop_back(); }
+
+const std::deque<int> &GetBlockStack() { return block_id_stack; }
 
 int BlockDepth() { return block_id_stack.size(); }
 }  // namespace platform

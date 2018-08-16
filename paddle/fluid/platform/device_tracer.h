@@ -13,13 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 #pragma once
 
+#include <gflags/gflags.h>
 #include <sys/time.h>
 #include <time.h>
 #include <chrono>  // NOLINT
+#include <deque>
 #include <string>
 
 #include "paddle/fluid/platform/dynload/cupti.h"
 #include "paddle/fluid/platform/profiler.pb.h"
+
+DECLARE_bool(profile_with_details);
 
 namespace paddle {
 namespace platform {
@@ -106,6 +110,8 @@ void ClearCurAnnotation();
 std::string CurAnnotation();
 
 void SetCurBlock(int block_id);
+int GetCurBlock();
+const std::deque<int>& GetBlockStack();
 void ClearCurBlock();
 int BlockDepth();
 }  // namespace platform

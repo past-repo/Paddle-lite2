@@ -139,6 +139,8 @@ class OperatorBase {
   void CheckAllInputOutputSet() const;
   virtual void RunImpl(const Scope& scope,
                        const platform::Place& place) const = 0;
+  size_t id_;
+  static size_t count;
 };
 
 class ExecutionContext {

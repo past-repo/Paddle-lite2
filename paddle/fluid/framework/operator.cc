@@ -22,6 +22,7 @@ limitations under the License. */
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/framework/shape_inference.h"
 #include "paddle/fluid/framework/var_type.h"
+#include "paddle/fluid/platform/device_tracer.h"
 #include "paddle/fluid/platform/profiler.h"
 
 DECLARE_bool(benchmark);
@@ -31,6 +32,8 @@ DEFINE_bool(check_nan_inf, false,
 
 namespace paddle {
 namespace framework {
+
+size_t OperatorBase::count = 0;
 
 std::vector<std::tuple<platform::Place, LibraryType>> kKernelPriority = {
     std::make_tuple(platform::CUDAPlace(0), LibraryType::kCUDNN),
@@ -137,7 +140,17 @@ void OperatorBase::Run(const Scope& scope, const platform::Place& place) {
 #endif
   }
   platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();
-  platform::RecordEvent record_event(Type(), pool.Get(place));
+  // Generate event name
+  std::stringstream event_name;
+  if (FLAGS_profile_with_details) {
+    for (auto id : platform::GetBlockStack()) {
+      event_name << id << "/";
+    }
+    event_name << Type() << "#" << id_;
+  } else {
+    event_name << Type();
+  }
+  platform::RecordEvent record_event(event_name.str(), pool.Get(place));
   RunImpl(scope, place);
   VLOG(3) << place << " " << DebugStringEx(&scope);
 }
@@ -250,7 +263,11 @@ OperatorBase::OperatorBase(const std::string& type,
                            const VariableNameMap& inputs,
                            const VariableNameMap& outputs,
                            const AttributeMap& attrs)
-    : type_(type), inputs_(inputs), outputs_(outputs), attrs_(attrs) {
+    : type_(type),
+      inputs_(inputs),
+      outputs_(outputs),
+      attrs_(attrs),
+      id_(OperatorBase::count++) {
   GenerateTemporaryNames();
   CheckAllInputOutputSet();
 }
