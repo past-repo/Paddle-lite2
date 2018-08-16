@@ -27,9 +27,8 @@ limitations under the License. */
 #include "paddle/fluid/framework/block_desc.h"
 #include "paddle/fluid/string/printf.h"
 
-DEFINE_int32(profile_with_details, 0,
-             "profile with details, such as block information. 0: default; 1: "
-             "with block level; 2: each operator separated");
+DEFINE_bool(profile_with_details, false,
+            "profile with details, such as block information");
 
 namespace paddle {
 namespace platform {

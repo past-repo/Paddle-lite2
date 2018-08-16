@@ -142,22 +142,13 @@ void OperatorBase::Run(const Scope& scope, const platform::Place& place) {
   platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();
   // Generate event name
   std::stringstream event_name;
-  switch (FLAGS_profile_with_details) {
-    case 0:
-      event_name << Type();
-      break;
-    case 1: {
-      for (auto id : platform::GetBlockStack()) {
-        event_name << id << "/";
-      }
-      event_name << Type();
-    } break;
-    case 2: {
-      for (auto id : platform::GetBlockStack()) {
-        event_name << id << "/";
-      }
-      event_name << Type() << "#" << id_;
+  if (FLAGS_profile_with_details) {
+    for (auto id : platform::GetBlockStack()) {
+      event_name << id << "/";
     }
+    event_name << Type() << "#" << id_;
+  } else {
+    event_name << Type();
   }
   platform::RecordEvent record_event(event_name.str(), pool.Get(place));
   RunImpl(scope, place);

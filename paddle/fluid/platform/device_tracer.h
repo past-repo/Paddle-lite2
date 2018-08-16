@@ -23,7 +23,7 @@ limitations under the License. */
 #include "paddle/fluid/platform/dynload/cupti.h"
 #include "paddle/fluid/platform/profiler.pb.h"
 
-DECLARE_int32(profile_with_details);
+DECLARE_bool(profile_with_details);
 
 namespace paddle {
 namespace platform {
