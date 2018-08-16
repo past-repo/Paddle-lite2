@@ -111,6 +111,7 @@ std::string CurAnnotation();
 
 void SetCurBlock(int block_id);
 int GetCurBlock();
+std::string BlockStackRepr();
 const std::deque<int>& GetBlockStack();
 void ClearCurBlock();
 int BlockDepth();

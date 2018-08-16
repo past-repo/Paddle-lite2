@@ -393,6 +393,15 @@ int GetCurBlock() {
 
 void ClearCurBlock() { block_id_stack.pop_back(); }
 
+std::string BlockStackRepr() {
+  std::stringstream ss;
+  ss << "block/";
+  for (auto block_id : GetBlockStack()) {
+    ss << block_id << "/";
+  }
+  return ss.str();
+}
+
 const std::deque<int> &GetBlockStack() { return block_id_stack; }
 
 int BlockDepth() { return block_id_stack.size(); }
