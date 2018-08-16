@@ -88,7 +88,6 @@ void InitializeVariable(Variable* var, proto::VarType::Type var_type) {
 
 void Executor::CreateVariables(const ProgramDesc& pdesc, Scope* scope,
                                int block_id) {
-  platform::RecordEvent _("block#"+std::to_string(block_id) + "-create_variables", nullptr);
   auto& global_block = pdesc.Block(block_id);
 
   const Scope* ancestor_scope = scope;
@@ -297,14 +296,14 @@ void Executor::Run(const ProgramDesc& program, Scope* scope,
 std::unique_ptr<ExecutorPrepareContext> Executor::Prepare(
     const ProgramDesc& program, int block_id) {
 
-  platform::RecordEvent _(platform::BlockStackRepr() + "-prepare", nullptr);
+  platform::RecordEvent _(platform::BlockStackRepr() + "prepare", nullptr);
   std::unique_ptr<ExecutorPrepareContext> ctx(
       new ExecutorPrepareContext(program, block_id));
   PADDLE_ENFORCE_LT(static_cast<size_t>(block_id), program.Size());
   auto& block = program.Block(block_id);
 
   {
-    platform::RecordEvent _(platform::BlockStackRepr() + "-create_ops", nullptr);
+    platform::RecordEvent _(platform::BlockStackRepr() + "prepare/create_ops", nullptr);
     for (auto &op_desc : block.AllOps()) {
       ctx->ops_.push_back(OpRegistry::CreateOp(*op_desc));
     }
@@ -335,6 +334,7 @@ void Executor::RunPreparedContext(ExecutorPrepareContext* ctx, Scope* scope,
   //if (create_vars) LOG(INFO) << "create vars";
   //if (create_local_scope) LOG(INFO) << "create create_local_scope";
   if (create_vars) {
+    platform::RecordEvent _(platform::BlockStackRepr() + "RunPreparedContext/create_variables", nullptr);
     if (create_local_scope) {
       local_scope = &scope->NewScope();
     }
@@ -350,6 +350,9 @@ void Executor::RunPreparedContext(ExecutorPrepareContext* ctx, Scope* scope,
     }
   }
   platform::DeviceContextPool::Instance().Get(place_)->Wait();
+
+
+  platform::RecordEvent _(platform::BlockStackRepr() + "RunPreparedContext/clean_scope", nullptr);
   if (local_scope != scope) {
     scope->DeleteScope(local_scope);
   } else {
