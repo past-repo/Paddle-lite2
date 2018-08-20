@@ -24,6 +24,7 @@ limitations under the License. */
 #include "paddle/fluid/framework/var_type.h"
 #include "paddle/fluid/platform/profiler.h"
 
+DEFINE_bool(infer_mode, false, "Used in inference.");
 DECLARE_bool(benchmark);
 DEFINE_bool(check_nan_inf, false,
             "Checking whether operator produce NAN/INF or not. It will be "

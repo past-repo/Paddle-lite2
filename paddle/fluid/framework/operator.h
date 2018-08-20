@@ -34,6 +34,8 @@ limitations under the License. */
 #include "paddle/fluid/platform/device_context.h"
 #include "paddle/fluid/platform/variant.h"
 
+DECLARE_bool(infer_mode);
+
 namespace paddle {
 namespace framework {
 

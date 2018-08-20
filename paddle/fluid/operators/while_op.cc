@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <vector>
+#include <paddle/fluid/framework/infer_executor.h>
 #include "paddle/fluid/framework/executor.h"
 #include "paddle/fluid/framework/lod_tensor_array.h"
 #include "paddle/fluid/framework/op_registry.h"
@@ -47,24 +48,61 @@ class WhileOp : public framework::OperatorBase {
     auto &cond = scope.FindVar(Input(kCondition))->Get<LoDTensor>();
     PADDLE_ENFORCE_EQ(cond.dims(), paddle::framework::make_ddim({1}));
 
-    framework::Executor executor(dev_place);
     auto *block = Attr<framework::BlockDesc *>(kStepBlock);
+    FLAGS_infer_mode = true;
+    if (!FLAGS_infer_mode) {  // training
+      framework::Executor executor(dev_place);
 
-    auto *program = block->Program();
+      auto step_scopes =
+          scope.FindVar(Output(kStepScopes))->GetMutable<StepScopeVar>();
 
-    auto step_scopes =
-        scope.FindVar(Output(kStepScopes))->GetMutable<StepScopeVar>();
+      PADDLE_ENFORCE(platform::is_cpu_place(cond.place()),
+                     "Condition of while op must in CPU memory.");
+      while (cond.data<bool>()[0]) {
+        auto &current_scope = scope.NewScope();
+        step_scopes->push_back(&current_scope);
 
-    PADDLE_ENFORCE(platform::is_cpu_place(cond.place()),
-                   "Condition of while op must in CPU memory.");
-    while (cond.data<bool>()[0]) {
-      auto &current_scope = scope.NewScope();
-      step_scopes->push_back(&current_scope);
+        executor.Run(*block->Program(), &current_scope, block->ID(),
+                     false /*create_local_scope*/);
+      }
 
-      executor.Run(*program, &current_scope, block->ID(),
-                   false /*create_local_scope*/);
+    } else {  // inferencing
+
+      PADDLE_ENFORCE(platform::is_cpu_place(cond.place()),
+                     "Condition of while op must in CPU memory.");
+      if (!infer_executor_) {
+        LOG(WARNING) << "creating while executor " << this;
+        infer_executor_.reset(new framework::InferExecutor(*block->Program(), 0, dev_place));
+      }
+      auto *step_scopes =
+          scope.FindVar(Output(kStepScopes))->GetMutable<StepScopeVar>();
+      PADDLE_ENFORCE_NOT_NULL(step_scopes);
+
+      int step = 0;
+      while (cond.data<bool>()[0]) {
+        LOG(INFO) << "step " << step;
+        framework::Scope *current_scope;
+        if (step >= step_scopes->size()) {
+          current_scope = &scope.NewScope();
+
+          infer_executor_->CreateVariables(*block->Program(), current_scope,
+                                           0);
+          step_scopes->push_back(current_scope);
+        } else {
+          current_scope = step_scopes->at(step);
+        }
+        ++step;
+        infer_executor_->Run(current_scope);
+
+        LOG(INFO) << "step " << step;
+      }
+      LOG(INFO) << "end while";
     }
   }
+
+  // The following members are used only for inferecing.
+  mutable std::unique_ptr<framework::InferExecutor> infer_executor_;
+  mutable std::shared_ptr<framework::Scope> infer_scope_;
 };
 
 class WhileOpMaker : public framework::OpProtoAndCheckerMaker {
