@@ -55,6 +55,8 @@ class Analyzer : public OrderedRegistry<PassManager> {
   // Register all the pass-managers.
   Analyzer();
 
+  static Analyzer& Instance();
+
   void Run(Argument* argument);
 
   DISABLE_COPY_AND_ASSIGN(Analyzer);

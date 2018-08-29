@@ -43,7 +43,6 @@ class AnalysisPredictor : public NativePaddlePredictor {
     } else {
       place_ = paddle::platform::CPUPlace();
     }
-    // PADDLE_ENFORCE(!parent_scope);
     if (parent_scope) {
       scope_ = parent_scope;
       sub_scope_ = &(parent_scope->NewScope());
@@ -112,7 +111,7 @@ class AnalysisPredictor : public NativePaddlePredictor {
     }
     argument.origin_program_desc.reset(
         new ProgramDesc(*inference_program_->Proto()));
-    Singleton<Analyzer>::Global().Run(&argument);
+    Analyzer::Instance().Run(&argument);
     CHECK(argument.transformed_program_desc);
     VLOG(5) << "to prepare executor";
     inference_program_.reset(
@@ -166,6 +165,11 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     return nullptr;
   }
   return predictor;
+}
+
+Analyzer& Analyzer::Instance() {
+  static Analyzer g_analyzer;
+  return g_analyzer;
 }
 
 }  // namespace paddle
