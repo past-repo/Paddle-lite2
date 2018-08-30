@@ -293,7 +293,7 @@ void TestDituRNNPrediction() {
   base_predictor->Run(input_slots, &base_outputs);
 
   LOG(INFO) << "===========profile result===========";
-  if (FLAGS_num_threads == 1) {
+  if (FLAGS_num_threads <= 1) {
     std::vector<PaddleTensor> input_slots;
     // Prepare inputs.
     DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
@@ -307,13 +307,15 @@ void TestDituRNNPrediction() {
     print_time(0, timer.toc() / num_times);
   } else {
     std::vector<std::thread> threads;
+    DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
+    std::vector<PaddleTensor> input_slots;
+    // Prepare inputs.
+    PrepareInputs(&input_slots, &data, batch_size);
     for (int tid = 0; tid < FLAGS_num_threads; ++tid) {
       threads.emplace_back([&, tid]() {
-        auto predictor_tid = predictor->Clone();
-        DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
-        std::vector<PaddleTensor> input_slots;
-        // Prepare inputs.
-        PrepareInputs(&input_slots, &data, batch_size);
+        auto predictor_tid =
+            CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kAnalysis>(
+                config);
         std::vector<PaddleTensor> outputs;
 
         Timer timer;

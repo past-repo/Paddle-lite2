@@ -112,7 +112,6 @@ void Analyzer::Run(Argument* argument) {
                     "fc_lstm_fuse_pass", "graph_viz_pass",         //
                     "seq_concat_fc_fuse_pass", "graph_viz_pass",   //
                     "fc_fuse_pass", "graph_viz_pass"               //
-
                 }));
 
   for (auto& x : data_) {
