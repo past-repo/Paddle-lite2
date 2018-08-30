@@ -43,7 +43,6 @@ class AnalysisPredictor : public NativePaddlePredictor {
     } else {
       place_ = paddle::platform::CPUPlace();
     }
-    PADDLE_ENFORCE(!parent_scope);
     if (parent_scope) {
       scope_ = parent_scope;
       sub_scope_ = &(parent_scope->NewScope());
@@ -112,17 +111,27 @@ class AnalysisPredictor : public NativePaddlePredictor {
     }
     argument.origin_program_desc.reset(
         new ProgramDesc(*inference_program_->Proto()));
-    Singleton<Analyzer>::Global().Run(&argument);
+    Analyzer::Instance().Run(&argument);
     CHECK(argument.transformed_program_desc);
     VLOG(5) << "to prepare executor";
-    // LOG(INFO) << "transformed_parogram_desc " <<
-    // argument.transformed_program_desc->DebugString();
     inference_program_.reset(
         new framework::ProgramDesc(*argument.transformed_program_desc));
     PADDLE_ENFORCE(argument.Has("param_scope"));
     // Update scope.
     scope_.reset(argument.Release<framework::Scope>("param_scope"));
     LOG(INFO) << "optimize end ==";
+  }
+
+  std::unique_ptr<PaddlePredictor> Clone() override {
+    LOG(INFO) << "AnalysisPredictor::clone";
+    std::unique_ptr<PaddlePredictor> cls(new AnalysisPredictor(config_));
+
+    if (!dynamic_cast<AnalysisPredictor*>(cls.get())->Init(scope_)) {
+      LOG(ERROR) << "fail to call Init";
+      return nullptr;
+    }
+    // fix manylinux compile error.
+    return std::move(cls);
   }
 
  private:
@@ -132,7 +141,7 @@ class AnalysisPredictor : public NativePaddlePredictor {
 template <>
 std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     NativeConfig, PaddleEngineKind::kAnalysis>(const NativeConfig& config) {
-  VLOG(3) << "create NativePredictor";
+  VLOG(3) << "create AnalysisPredictor";
   if (config.use_gpu) {
     // 1. GPU memeroy
     PADDLE_ENFORCE_GT(
@@ -156,6 +165,11 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     return nullptr;
   }
   return predictor;
+}
+
+Analyzer& Analyzer::Instance() {
+  static Analyzer g_analyzer;
+  return g_analyzer;
 }
 
 }  // namespace paddle
