@@ -234,8 +234,7 @@ const float ditu_rnn_target_data[] = {
     93.5771, 3.84641, 0,       0,       0,       0,       0,       0,
     169.426, 0,       0,       0,       0,       0,       0,       0};
 // Test with a really complicate model.
-void TestDituRNNPrediction(bool use_analysis_and_activate_ir = false,
-                           int num_threads = FLAGS_num_threads) {
+void TestDituRNNPrediction(bool use_analysis_and_activate_ir = false) {
   NativeConfig config;
   config.prog_file = FLAGS_infer_ditu_rnn_model + "/__model__";
   config.param_file = FLAGS_infer_ditu_rnn_model + "/param";
@@ -249,6 +248,7 @@ void TestDituRNNPrediction(bool use_analysis_and_activate_ir = false,
       CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kNative>(config);
   auto predictor =
       CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kAnalysis>(config);
+
   std::vector<PaddleTensor> input_slots;
   DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
   // Prepare inputs.
@@ -258,64 +258,29 @@ void TestDituRNNPrediction(bool use_analysis_and_activate_ir = false,
   base_predictor->Run(input_slots, &base_outputs);
 
   LOG(INFO) << "===========profile result===========";
-  if (num_threads == 1) {
-    std::vector<PaddleTensor> input_slots;
-    // Prepare inputs.
-    DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
-    PrepareInputs(&input_slots, &data, batch_size);
-
-    Timer timer;
-    timer.tic();
-    for (int i = 0; i < num_times; i++) {
-      predictor->Run(input_slots, &outputs);
-    }
-    print_time(batch_size, num_times, 1, 0, timer.toc() / num_times);
-  } else {
-    std::vector<std::thread> threads;
-    std::vector<PaddleTensor> input_slots;
-    // Prepare inputs.
-    PrepareInputs(&input_slots, &data, batch_size);
-    std::vector<PaddleTensor> outputs;
-    for (int tid = 0; tid < num_threads; ++tid) {
-      threads.emplace_back([&, tid]() {
-        auto predictor_tid =
-            CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kAnalysis>(
-                config);
-        DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
-
-        Timer timer;
-        timer.tic();
-        for (int i = 0; i < num_times; i++) {
-          predictor_tid->Run(input_slots, &outputs);
-        }
-        print_time(batch_size, num_times, num_threads, tid,
-                   timer.toc() / num_times);
-      });
-    }
-    for (int i = 0; i < num_threads; ++i) {
-      threads[i].join();
-    }
+  Timer timer;
+  timer.tic();
+  for (int i = 0; i < num_times; i++) {
+    predictor->Run(input_slots, &outputs);
   }
+  print_time(batch_size, num_times, 1, 0, timer.toc() / num_times);
   LOG(INFO) << "=====================================";
 
-  if (num_threads == 1) {
-    PADDLE_ENFORCE_GT(outputs.size(), 0);
-    PADDLE_ENFORCE_EQ(outputs.size(), base_outputs.size());
-    for (size_t i = 0; i < outputs.size(); i++) {
-      auto &out = outputs[i];
-      auto &base_out = base_outputs[i];
-      size_t size = std::accumulate(out.shape.begin(), out.shape.end(), 1,
-                                    [](int a, int b) { return a * b; });
-      size_t size1 =
-          std::accumulate(base_out.shape.begin(), base_out.shape.end(), 1,
-                          [](int a, int b) { return a * b; });
-      PADDLE_ENFORCE_EQ(size, size1);
-      PADDLE_ENFORCE_GT(size, 0);
-      float *data = static_cast<float *>(out.data.data());
-      float *base_data = static_cast<float *>(base_out.data.data());
-      for (size_t i = 0; i < size; i++) {
-        EXPECT_NEAR(data[i], base_data[i], 1e-3);
-      }
+  PADDLE_ENFORCE_GT(outputs.size(), 0);
+  PADDLE_ENFORCE_EQ(outputs.size(), base_outputs.size());
+  for (size_t i = 0; i < outputs.size(); i++) {
+    auto &out = outputs[i];
+    auto &base_out = base_outputs[i];
+    size_t size = std::accumulate(out.shape.begin(), out.shape.end(), 1,
+                                  [](int a, int b) { return a * b; });
+    size_t size1 = std::accumulate(base_out.shape.begin(), base_out.shape.end(),
+                                   1, [](int a, int b) { return a * b; });
+    PADDLE_ENFORCE_EQ(size, size1);
+    PADDLE_ENFORCE_GT(size, 0);
+    float *data = static_cast<float *>(out.data.data());
+    float *base_data = static_cast<float *>(base_out.data.data());
+    for (size_t i = 0; i < size; i++) {
+      EXPECT_NEAR(data[i], base_data[i], 1e-3);
     }
   }
 
@@ -335,14 +300,57 @@ void TestDituRNNPrediction(bool use_analysis_and_activate_ir = false,
   }
 }
 
+void TestDituRNNPredictionMultiThread(int num_threads) {
+  NativeConfig config;
+  config.prog_file = FLAGS_infer_ditu_rnn_model + "/__model__";
+  config.param_file = FLAGS_infer_ditu_rnn_model + "/param";
+  config.use_gpu = false;
+  config.device = 0;
+  config.specify_input_name = true;
+  int batch_size = FLAGS_batch_size;
+  int num_times = FLAGS_repeat;
+
+  std::vector<PaddleTensor> input_slots;
+  DataRecord data(FLAGS_infer_ditu_rnn_data, batch_size);
+  // Prepare inputs.
+  PrepareInputs(&input_slots, &data, batch_size);
+  std::vector<PaddleTensor> outputs, base_outputs;
+
+  std::vector<std::thread> threads;
+  std::vector<std::unique_ptr<PaddlePredictor>> predictors;
+  // Bug here, the analyzer phase can't be parallelled because AttentionLSTM's
+  // hard code nodeid will be damanged.
+  for (int tid = 0; tid < num_threads; ++tid) {
+    predictors.emplace_back(
+        CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kAnalysis>(
+            config));
+  }
+
+  for (int tid = 0; tid < num_threads; ++tid) {
+    threads.emplace_back([&, tid]() {
+      std::vector<PaddleTensor> outputs;
+      Timer timer;
+      timer.tic();
+      for (int i = 0; i < num_times; i++) {
+        predictors[tid]->Run(input_slots, &outputs);
+      }
+      print_time(batch_size, num_times, num_threads, tid,
+                 timer.toc() / num_times);
+    });
+  }
+  for (int i = 0; i < num_threads; ++i) {
+    threads[i].join();
+  }
+}
+
 TEST(Analyzer, DituRNN) {
-  TestDituRNNPrediction(false, 1);
-  TestDituRNNPrediction(true, 1);
+  TestDituRNNPrediction(false);
+  TestDituRNNPrediction(true);
 }
 
 TEST(Analyzer, DituRNN_multi_thread) {
-  TestDituRNNPrediction(false, 4);
-  TestDituRNNPrediction(true, 4);
+  TestDituRNNPredictionMultiThread(FLAGS_num_threads);
+  // TestDituRNNPrediction(true, 4);
 }
 
 }  // namespace analysis

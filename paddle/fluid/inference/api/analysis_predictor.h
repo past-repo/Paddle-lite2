@@ -39,6 +39,8 @@ class AnalysisPredictor : public NativePaddlePredictor {
     return NativePaddlePredictor::Run(inputs, output_data, batch_size);
   }
 
+  std::unique_ptr<AnalysisPredictor> Clone() const;
+
   void OptimizeInferenceProgram();
 
   Argument& analysis_argument() { return argument_; }
