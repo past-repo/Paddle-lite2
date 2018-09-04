@@ -102,14 +102,6 @@ void AnalysisPredictor::OptimizeInferenceProgram() {
   LOG(INFO) << "optimize end ==";
 }
 
-std::unique_ptr<AnalysisPredictor> AnalysisPredictor::Clone() const {
-
-
-
-  return std::unique_ptr<AnalysisPredictor>();
-}
-
-
 template <>
 std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     NativeConfig, PaddleEngineKind::kAnalysis>(const NativeConfig& config) {
