@@ -14,6 +14,7 @@
 
 #include "paddle/fluid/inference/analysis/analyzer.h"
 #include <string>
+#include <vector>
 #include "paddle/fluid/inference/analysis/data_flow_graph_to_fluid_pass.h"
 #include "paddle/fluid/inference/analysis/dfg_graphviz_draw_pass.h"
 #include "paddle/fluid/inference/analysis/fluid_to_data_flow_graph_pass.h"
@@ -105,14 +106,13 @@ void Analyzer::Run(Argument* argument) {
   argument->Set(kFluidToIrPassesAttr,
                 new std::vector<std::string>({
                     // Manual update the passes here.
-                    "graph_viz_pass",                              //
-                    "infer_clean_graph_pass", "graph_viz_pass",    //
-                    "attention_lstm_fuse_pass", "graph_viz_pass",  //
-                    "fc_lstm_fuse_pass", "graph_viz_pass",         //
-                    "mul_lstm_fuse_pass", "graph_viz_pass",        //
-                    "seq_concat_fc_fuse_pass", "graph_viz_pass",   //
-                    "fc_fuse_pass", "graph_viz_pass"               //
-
+                    "graph_viz_pass",                            //
+                    "infer_clean_graph_pass", "graph_viz_pass",  //
+                    // "attention_lstm_fuse_pass", "graph_viz_pass",  //
+                    "fc_lstm_fuse_pass", "graph_viz_pass",        //
+                    "mul_lstm_fuse_pass", "graph_viz_pass",       //
+                    "seq_concat_fc_fuse_pass", "graph_viz_pass",  //
+                    "fc_fuse_pass", "graph_viz_pass"              //
                 }));
 
   for (auto& x : data_) {
