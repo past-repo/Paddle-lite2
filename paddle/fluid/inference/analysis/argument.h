@@ -87,7 +87,7 @@ struct Argument {
 
   template <typename T>
   T& Get(const std::string& key) {
-    PADDLE_ENFORCE(Has(key));
+    PADDLE_ENFORCE(Has(key), "no key [%s] in Argument", key);
     return *boost::any_cast<T*>(attrs_.at(key));
   }
 

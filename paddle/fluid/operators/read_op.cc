@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "paddle/fluid/platform/enforce.h"
 #include "paddle/fluid/framework/op_registry.h"
 #include "paddle/fluid/framework/reader.h"
 #include "paddle/fluid/operators/detail/safe_ref.h"
@@ -75,7 +76,7 @@ class ReadOp : public framework::OperatorBase {
     reader->ReadNext(&ins);
     if (ins.empty()) {
       if (Attr<bool>("throw_eof_exp")) {
-        PADDLE_THROW_EOF();
+
       } else {
         ins.resize(out_arg_names.size());
         for (auto& tensor : ins) {
