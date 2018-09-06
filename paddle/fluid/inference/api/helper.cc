@@ -14,6 +14,8 @@
 
 #include "paddle/fluid/inference/api/helper.h"
 
+DEFINE_bool(profile, false, "Turn on profiler for fluid");
+
 namespace paddle {
 namespace inference {
 
@@ -39,6 +41,8 @@ std::string to_string<std::vector<std::vector<float>>>(
   }
   return ss.str();
 }
+
+int Profiler::count = 0;
 
 }  // namespace inference
 }  // namespace paddle

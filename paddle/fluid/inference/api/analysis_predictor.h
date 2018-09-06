@@ -45,6 +45,8 @@ class AnalysisPredictor : public NativePaddlePredictor {
 
   Argument& analysis_argument() { return argument_; }
 
+  ~AnalysisPredictor();
+
  private:
   AnalysisConfig config_;
   Argument argument_;

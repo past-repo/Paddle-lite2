@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <gflags/gflags.h>
 #include <sys/time.h>
 #include <algorithm>
 #include <numeric>
@@ -22,6 +23,9 @@
 #include <vector>
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
 #include "paddle/fluid/inference/api/timer.h"
+#include "paddle/fluid/platform/profiler.h"
+
+DECLARE_bool(profile);
 
 namespace paddle {
 namespace inference {
@@ -87,6 +91,35 @@ static void TensorAssignData(PaddleTensor *tensor,
     }
   }
 }
+
+// Try to make the profile safer when multiple predictor is called.
+// NOTE not thread safe.
+struct Profiler {
+  static int count;
+  // Start the profile, only start when first called.
+  static void Start(bool with_gpu) {
+#if !defined(_WIN32)
+    if (FLAGS_profile && count++ == 0) {
+      LOG(WARNING) << "Profiler is actived, might affect the performance";
+      LOG(INFO) << "You can turn off by set gflags '-profile false'";
+
+      auto tracking_device = with_gpu ? platform::ProfilerState::kAll
+                                      : platform::ProfilerState::kCPU;
+      platform::EnableProfiler(tracking_device);
+    }
+#endif
+  }
+
+  // Stop the profile and print the result. Only called when last called.
+  static void Stop() {
+#if !defined(_WIN32)
+    if (FLAGS_profile && --count == 0) {
+      platform::DisableProfiler(platform::EventSortingKey::kTotal,
+                                "./profile.log");
+    }
+#endif
+  }
+};
 
 }  // namespace inference
 }  // namespace paddle
