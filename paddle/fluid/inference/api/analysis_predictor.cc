@@ -127,7 +127,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
     AnalysisConfig, PaddleEngineKind::kAnalysis>(const AnalysisConfig& config) {
   VLOG(3) << "create AnalysisConfig";
   if (config.use_gpu) {
-    // 1. GPU memeroy
+    // 1. GPU memory
     PADDLE_ENFORCE_GT(
         config.fraction_of_gpu_memory, 0.f,
         "fraction_of_gpu_memory in the config should be set to range (0., 1.]");

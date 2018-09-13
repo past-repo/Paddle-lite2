@@ -61,6 +61,11 @@ struct DataReader {
   std::unique_ptr<std::ifstream> file;
 };
 
+int ShapeNumel(const std::vector<int> &shape) {
+  return std::accumulate(shape.begin(), shape.end(), 1,
+                         [](int a, int b) { return a * b; });
+}
+
 void Main(int batch_size) {
   // shape --
   // Create Predictor --
@@ -72,6 +77,14 @@ void Main(int batch_size) {
       CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
           config);
 
+  // Create baseline predictor
+  NativeConfig base_config;
+  base_config.model_dir = FLAGS_infer_model;
+  base_config.use_gpu = false;
+  auto base_predictor =
+      CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kNative>(
+          base_config);
+
   std::vector<PaddleTensor> input_slots(1);
   // one batch starts
   // data --
@@ -81,14 +94,40 @@ void Main(int batch_size) {
   inference::Timer timer;
   double sum = 0;
   std::vector<PaddleTensor> output_slots;
+  std::vector<PaddleTensor> base_output_slots;
 
   int num_batches = 0;
+  int summary_records = 10;
   for (int t = 0; t < FLAGS_repeat; t++) {
     DataReader reader(FLAGS_infer_data);
     while (reader.NextBatch(&input, FLAGS_batch_size)) {
       if (FLAGS_topn > 0 && num_batches > FLAGS_topn) break;
       timer.tic();
       CHECK(predictor->Run(input_slots, &output_slots));
+      CHECK(base_predictor->Run(input_slots, &base_output_slots));
+
+      ASSERT_EQ(output_slots.size(), base_output_slots.size());
+      ASSERT_TRUE(!output_slots.empty());
+      for (int i = 0; i < output_slots.size(); i++) {
+        auto &output = output_slots[i];
+        auto &base_output = base_output_slots[i];
+        ASSERT_EQ(ShapeNumel(output.shape), ShapeNumel(base_output.shape));
+        ASSERT_GT(ShapeNumel(output.shape), 0);
+        for (int j = 0; j < ShapeNumel(output.shape); j++) {
+          auto *base_output_data =
+              static_cast<float *>(base_output.data.data());
+          auto *output_data = static_cast<float *>(output.data.data());
+          EXPECT_NEAR(base_output_data[i], output_data[i], 1e-3);
+
+          if (summary_records-- > 0) {
+            LOG(INFO) << "out/base: " << output_data[j] << " "
+                      << base_output_data[j];
+          } else {
+            summary_records = 0;
+          }
+        }
+      }
+
       sum += timer.toc();
       ++num_batches;
     }
