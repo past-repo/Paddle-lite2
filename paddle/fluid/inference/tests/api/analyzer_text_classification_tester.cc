@@ -23,11 +23,13 @@
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
 #include "paddle/fluid/inference/api/paddle_inference_pass.h"
 #include "paddle/fluid/inference/api/timer.h"
+#include "paddle/fluid/inference/tests/api/ut_helper.h"
 
 DEFINE_string(infer_model, "", "Directory of the inference model.");
 DEFINE_string(infer_data, "", "Path of the dataset.");
 DEFINE_int32(batch_size, 1, "batch size.");
 DEFINE_int32(repeat, 1, "How many times to repeat run.");
+DEFINE_int32(num_threads, 2, "How many threads for multi-thread test");
 DEFINE_int32(topn, -1, "Run top n batches of data to save time");
 
 namespace paddle {
@@ -81,9 +83,19 @@ void Main(int batch_size) {
   NativeConfig base_config;
   base_config.model_dir = FLAGS_infer_model;
   base_config.use_gpu = false;
+
+  AnalysisConfig no_optim_config;
+  no_optim_config.model_dir = config.model_dir;
+  no_optim_config.use_gpu = config.use_gpu;
+  no_optim_config.enable_ir_optim = false;
+
   auto base_predictor =
       CreatePaddlePredictor<NativeConfig, PaddleEngineKind::kNative>(
           base_config);
+
+  auto no_optim_predictor =
+      CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
+          no_optim_config);
 
   std::vector<PaddleTensor> input_slots(1);
   // one batch starts
@@ -95,6 +107,7 @@ void Main(int batch_size) {
   double sum = 0;
   std::vector<PaddleTensor> output_slots;
   std::vector<PaddleTensor> base_output_slots;
+  std::vector<PaddleTensor> no_optim_output_slots;
 
   int num_batches = 0;
   int summary_records = 10;
@@ -104,31 +117,38 @@ void Main(int batch_size) {
       if (FLAGS_topn > 0 && num_batches > FLAGS_topn) break;
       timer.tic();
       CHECK(predictor->Run(input_slots, &output_slots));
+      sum += timer.toc();
+
       CHECK(base_predictor->Run(input_slots, &base_output_slots));
+      CHECK(no_optim_predictor->Run(input_slots, &no_optim_output_slots));
 
       ASSERT_EQ(output_slots.size(), base_output_slots.size());
       ASSERT_TRUE(!output_slots.empty());
-      for (int i = 0; i < output_slots.size(); i++) {
+      for (size_t i = 0; i < output_slots.size(); i++) {
         auto &output = output_slots[i];
         auto &base_output = base_output_slots[i];
+        auto &no_optim_output = no_optim_output_slots[i];
         ASSERT_EQ(ShapeNumel(output.shape), ShapeNumel(base_output.shape));
+        ASSERT_EQ(ShapeNumel(output.shape), ShapeNumel(no_optim_output.shape));
         ASSERT_GT(ShapeNumel(output.shape), 0);
         for (int j = 0; j < ShapeNumel(output.shape); j++) {
           auto *base_output_data =
               static_cast<float *>(base_output.data.data());
           auto *output_data = static_cast<float *>(output.data.data());
+          auto *no_optim_data =
+              static_cast<float *>(no_optim_output.data.data());
           EXPECT_NEAR(base_output_data[i], output_data[i], 1e-3);
+          EXPECT_NEAR(no_optim_data[i], output_data[i], 1e-3);
 
           if (summary_records-- > 0) {
             LOG(INFO) << "out/base: " << output_data[j] << " "
-                      << base_output_data[j];
+                      << base_output_data[j] << " " << no_optim_data[i];
           } else {
             summary_records = 0;
           }
         }
       }
 
-      sum += timer.toc();
       ++num_batches;
     }
   }
@@ -151,7 +171,39 @@ void Main(int batch_size) {
   }
 }
 
+void MainParallelly() {
+  std::vector<DataReader> data_readers;
+  std::vector<std::unique_ptr<PaddlePredictor>> predictors;
+
+  AnalysisConfig config;
+  config.model_dir = FLAGS_infer_model;
+  config.use_gpu = false;
+  config.enable_ir_optim = true;
+  for (int i = 0; i < FLAGS_num_threads; i++) {
+    data_readers.emplace_back(FLAGS_infer_data);
+
+    auto predictor =
+        CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
+            config);
+    predictors.emplace_back(std::move(predictor));
+  }
+
+  auto batch_updater = [&](std::vector<PaddleTensor> *inputs, int idx) {
+    CHECK_EQ(inputs->size(), 1UL);
+    if (!data_readers[idx].NextBatch(&inputs->front(), FLAGS_batch_size)) return 0;
+    return inputs->front().shape[0];
+  };
+
+  std::vector<std::vector<PaddleTensor>> input_slots(FLAGS_num_threads);
+  for (auto& input : input_slots) {
+    input.resize(1);
+    input.front().dtype = PaddleDType ::INT64;
+  }
+  ut_helper::MultiThreadRun(predictors, &input_slots, std::move(batch_updater));
+}
+
 TEST(text_classification, basic) { Main(FLAGS_batch_size); }
+TEST(text_classification, multi_thread) { MainParallelly(); }
 
 }  // namespace inference
 }  // namespace paddle
