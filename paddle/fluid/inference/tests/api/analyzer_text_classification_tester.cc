@@ -39,7 +39,10 @@ struct DataReader {
   explicit DataReader(const std::string &path)
       : file(new std::ifstream(path)) {}
 
+  explicit DataReader(DataReader &&other) : file(std::move(other.file)) {}
+
   bool NextBatch(PaddleTensor *tensor, int batch_size) {
+    // Currently only works with bs=1
     PADDLE_ENFORCE_EQ(batch_size, 1);
     std::string line;
     tensor->lod.clear();
@@ -180,7 +183,7 @@ void MainParallelly() {
   config.use_gpu = false;
   config.enable_ir_optim = true;
   for (int i = 0; i < FLAGS_num_threads; i++) {
-    data_readers.emplace_back(FLAGS_infer_data);
+    data_readers.emplace_back(DataReader(FLAGS_infer_data));
 
     auto predictor =
         CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
@@ -190,15 +193,22 @@ void MainParallelly() {
 
   auto batch_updater = [&](std::vector<PaddleTensor> *inputs, int idx) {
     CHECK_EQ(inputs->size(), 1UL);
-    if (!data_readers[idx].NextBatch(&inputs->front(), FLAGS_batch_size)) return 0;
-    return inputs->front().shape[0];
+    if (!data_readers[idx].NextBatch(&inputs->front(), FLAGS_batch_size))
+      return 0;
+    CHECK_EQ(inputs->front().lod.size(), 1UL);
+    return static_cast<int>(inputs->front().lod.front().size() - 1);
   };
 
   std::vector<std::vector<PaddleTensor>> input_slots(FLAGS_num_threads);
-  for (auto& input : input_slots) {
+  for (auto &input : input_slots) {
     input.resize(1);
-    input.front().dtype = PaddleDType ::INT64;
+    input.front().dtype = PaddleDType::INT64;
   }
+
+  for (int i = 0; i < 10; i++) {
+    data_readers[0].NextBatch(&input_slots[0].front(), FLAGS_batch_size);
+  }
+
   ut_helper::MultiThreadRun(predictors, &input_slots, std::move(batch_updater));
 }
 
