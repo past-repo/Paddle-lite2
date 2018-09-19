@@ -15,6 +15,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <atomic>
 #include <thread>  // NOLINT
 #include <vector>
 #include "paddle/fluid/framework/ir/fuse_pass_base.h"
@@ -105,6 +106,7 @@ void TestMultiThreadPrediction(
         CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
             config));
   }
+  std::atomic<double> average_time{0.};
   for (int tid = 0; tid < num_threads; ++tid) {
     threads.emplace_back([&, tid]() {
       // Each thread should have local inputs and outputs.
@@ -118,13 +120,16 @@ void TestMultiThreadPrediction(
           predictors[tid]->Run(inputs_tid[j], &outputs_tid);
         }
       }
-      PrintTime(batch_size, num_times, num_threads, tid,
-                timer.toc() / num_times, inputs_tid.size());
+      double ave = timer.toc() / num_times;
+      PrintTime(batch_size, num_times, num_threads, tid, ave,
+                inputs_tid.size());
+      average_time = average_time + ave;
     });
   }
   for (int i = 0; i < num_threads; ++i) {
     threads[i].join();
   }
+  LOG(INFO) << "each thread average time: " << average_time / FLAGS_num_threads;
 }
 
 void TestPrediction(AnalysisConfig config,
