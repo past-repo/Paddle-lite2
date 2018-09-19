@@ -21,7 +21,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "paddle/fluid/inference/api/paddle_inference_api.h"
+#include "paddle/fluid/inference/api/api.h"
 #include "paddle/fluid/inference/api/timer.h"
 
 namespace paddle {

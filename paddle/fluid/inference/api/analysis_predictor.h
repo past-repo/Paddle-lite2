@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 #include "paddle/fluid/inference/analysis/analyzer.h"
+#include "paddle/fluid/inference/api/api.h"
 #include "paddle/fluid/inference/api/api_impl.h"
-#include "paddle/fluid/inference/api/paddle_inference_api.h"
 
 namespace paddle {
 
