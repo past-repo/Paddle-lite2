@@ -36,7 +36,7 @@ DEFINE_double(
     "Memory size threshold (GB) when the garbage collector clear tensors."
     "Disabled when this value is less than 0");
 
-#define WITH_LOCK 1
+#define WITH_LOCK 0
 
 namespace paddle {
 namespace framework {

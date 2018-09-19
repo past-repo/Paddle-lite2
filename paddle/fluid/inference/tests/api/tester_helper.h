@@ -94,18 +94,29 @@ void TestOneThreadPrediction(
 
 void TestMultiThreadPrediction(
     AnalysisConfig config, const std::vector<std::vector<PaddleTensor>> inputs,
-    std::vector<PaddleTensor> *outputs, int num_threads) {
+    std::vector<PaddleTensor> *outputs, int num_threads,
+    bool use_clone = false) {
   int batch_size = FLAGS_batch_size;
   int num_times = FLAGS_repeat;
+  auto parent_predictor =
+      CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
+          config);
   std::vector<std::thread> threads;
   std::vector<std::unique_ptr<PaddlePredictor>> predictors;
   // TODO(yanchunwei): Bug here, the analyzer phase can't be parallelled
   // because AttentionLSTM's hard code nodeid will be damanged.
-  for (int tid = 0; tid < num_threads; ++tid) {
-    predictors.emplace_back(
-        CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
-            config));
+  if (!use_clone) {
+    for (int tid = 0; tid < num_threads; ++tid) {
+      predictors.emplace_back(
+          CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(
+              config));
+    }
+  } else { // clone and share parameter.
+    for (int tid = 0; tid < num_threads; ++tid) {
+      predictors.emplace_back(parent_predictor->Clone());
+    }
   }
+
   std::atomic<double> average_time{0.};
   for (int tid = 0; tid < num_threads; ++tid) {
     threads.emplace_back([&, tid]() {
