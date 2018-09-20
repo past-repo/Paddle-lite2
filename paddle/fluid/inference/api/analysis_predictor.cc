@@ -28,6 +28,8 @@ DECLARE_bool(profile);
 
 namespace paddle {
 
+using framework::ir::kParamScopeAttr;
+
 bool AnalysisPredictor::Init(
     const std::shared_ptr<framework::Scope>& parent_scope,
     framework::ProgramDesc* program = nullptr) {
@@ -49,12 +51,17 @@ bool AnalysisPredictor::Init(
   } else {
     place_ = paddle::platform::CPUPlace();
   }
+
+  // Set scope.
   if (parent_scope) {
+    LOG(INFO) << "Inherit parent scope from " << parent_scope;
     scope_ = parent_scope;
-    sub_scope_ = &(parent_scope->NewScope());
+    scope_inherited_ = true;
   } else {
+    LOG(INFO) << "Create new parent scope";
     paddle::framework::InitDevices(false);
     scope_.reset(new paddle::framework::Scope());
+    scope_inherited_ = false;
   }
 
   executor_.reset(new paddle::framework::Executor(place_));
@@ -81,15 +88,16 @@ bool AnalysisPredictor::Init(
   } else {
     inference_program_.reset(program);
   }
+
+  sub_scope_ = &scope_->NewScope();
+
   ctx_ = executor_->Prepare(*inference_program_, 0);
   if (config_._use_mkldnn) {
     executor_->EnableMKLDNN(*inference_program_);
   }
 
   VLOG(5) << "to create variables";
-  PADDLE_ENFORCE(scope_.get());
-  executor_->CreateVariables(*inference_program_,
-                             sub_scope_ ? sub_scope_ : scope_.get(), 0);
+  executor_->CreateVariables(*inference_program_, sub_scope_, 0);
   // Get the feed_target_names and fetch_target_names
   PrepareFeedFetch();
   return true;
@@ -100,7 +108,8 @@ void AnalysisPredictor::OptimizeInferenceProgram() {
   FLAGS_IA_enable_ir = config_.enable_ir_optim;
   FLAGS_IA_enable_tensorrt_subgraph_engine = false;
   FLAGS_IA_output_storage_path = "";  // Don't output the model.
-  // Analyze inference_program
+
+  // prepare inference_program
   if (!config_.model_dir.empty()) {
     argument_.fluid_model_dir.reset(new std::string(config_.model_dir));
   } else {
@@ -114,6 +123,14 @@ void AnalysisPredictor::OptimizeInferenceProgram() {
   }
   argument_.origin_program_desc.reset(
       new ProgramDesc(*inference_program_->Proto()));
+
+  // Set scope for parameter modification.
+  PADDLE_ENFORCE(
+      !scope_inherited_,
+      "the parameters in an inheriented scope can not be optimized.");
+  argument_.Set(framework::ir::kParamScopeAttr, scope_.get());
+
+  // Run ir passes.
   PADDLE_ENFORCE(config_.ir_mode == AnalysisConfig::IrPassMode::kExclude,
                  "Only kExclude is supported yet.");
   Analyzer().DisableIrPasses(config_.ir_passes).Run(&argument_);
@@ -122,10 +139,16 @@ void AnalysisPredictor::OptimizeInferenceProgram() {
   VLOG(5) << "to prepare executor";
   inference_program_.reset(
       new framework::ProgramDesc(*argument_.transformed_program_desc));
-  if (argument_.Has(framework::ir::kParamScopeAttr)) {
-    // Update scope.
-    scope_.reset(
-        argument_.Release<framework::Scope>(framework::ir::kParamScopeAttr));
+
+  // Update scope.
+  if (argument_.Has(kParamScopeAttr)) {
+    if (&argument_.Get<framework::Scope>(kParamScopeAttr) != scope_.get()) {
+      LOG(INFO) << "reset scope";
+      scope_.reset(
+          argument_.Release<framework::Scope>(framework::ir::kParamScopeAttr));
+    } else {
+      argument_.Release<framework::Scope>(framework::ir::kParamScopeAttr);
+    }
   }
   LOG(INFO) << "== optimize end ==";
 }

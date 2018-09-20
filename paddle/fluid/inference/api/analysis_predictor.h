@@ -52,6 +52,8 @@ class AnalysisPredictor : public NativePaddlePredictor {
  private:
   AnalysisConfig config_;
   Argument argument_;
+  // Whether the scope_ is inherinted from others.
+  bool scope_inherited_{false};
 };
 
 }  // namespace paddle
