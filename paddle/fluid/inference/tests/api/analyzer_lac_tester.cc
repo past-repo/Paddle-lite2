@@ -176,6 +176,8 @@ TEST(Analyzer_LAC, compare) {
 TEST(Analyzer_LAC, MultiThread) {
   AnalysisConfig cfg;
   SetConfig(&cfg);
+
+  // IR with multithread and Clone has some bugs, turn it off temporarily.
   cfg.enable_ir_optim = false;
   std::vector<PaddleTensor> outputs;
 
