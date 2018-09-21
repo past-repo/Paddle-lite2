@@ -127,8 +127,8 @@ TEST(Analyzer_LAC, profile) {
   AnalysisConfig cfg;
   SetConfig(&cfg);
   std::vector<PaddleTensor> outputs;
-
   std::vector<std::vector<PaddleTensor>> input_slots_all;
+
   SetInput(&input_slots_all);
   TestPrediction(cfg, input_slots_all, &outputs, FLAGS_num_threads);
 

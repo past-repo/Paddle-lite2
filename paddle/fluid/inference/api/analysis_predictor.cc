@@ -184,6 +184,7 @@ std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<
 
 std::unique_ptr<PaddlePredictor> AnalysisPredictor::Clone() {
   VLOG(3) << "Predictor::clone";
+  LOG(INFO) << "Cloning predictor";
   std::unique_ptr<PaddlePredictor> cls(new AnalysisPredictor(config_));
 
   auto* program = new framework::ProgramDesc(*inference_program_->Proto());

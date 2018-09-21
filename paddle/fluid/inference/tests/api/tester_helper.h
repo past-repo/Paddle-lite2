@@ -166,7 +166,7 @@ void TestMultiThreadPrediction(
       std::vector<PaddleTensor> outputs_tid;
       Timer timer;
       timer.tic();
-      auto& predictor = predictors[tid];
+      auto &predictor = predictors[tid];
       for (int i = 0; i < num_times; i++) {
         for (size_t j = 0; j < inputs_tid.size(); j++) {
           predictor->Run(inputs_tid[j], &outputs_tid);
@@ -187,13 +187,14 @@ void TestMultiThreadPrediction(
 void TestPrediction(AnalysisConfig config,
                     const std::vector<std::vector<PaddleTensor>> inputs,
                     std::vector<PaddleTensor> *outputs, int num_threads,
-                    bool use_analysis = FLAGS_use_analysis, bool use_clone=false) {
+                    bool use_analysis = FLAGS_use_analysis,
+                    bool use_clone = false) {
   LOG(INFO) << "use_analysis: " << use_analysis;
-  //if (num_threads == 1) {
-    //TestOneThreadPrediction(config, inputs, outputs, use_analysis);
+  // if (num_threads == 1) {
+  // TestOneThreadPrediction(config, inputs, outputs, use_analysis);
   //} else {
-    TestMultiThreadPrediction(config, inputs, outputs, num_threads,
-                              use_analysis, use_clone);
+  TestMultiThreadPrediction(config, inputs, outputs, num_threads, use_analysis,
+                            use_clone);
   //}
 }
 

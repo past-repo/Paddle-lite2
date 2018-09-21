@@ -40,6 +40,10 @@ class AnalysisPredictor : public NativePaddlePredictor {
   bool Run(const std::vector<PaddleTensor>& inputs,
            std::vector<PaddleTensor>* output_data,
            int batch_size = -1) override {
+    auto* it = scope_->FindVar("fc_0.w_0");
+    if (it) {
+      LOG(INFO) << "fc_0.w_0 data address: " << it->Get<framework::LoDTensor>().data<float>();
+    }
     return NativePaddlePredictor::Run(inputs, output_data, batch_size);
   }
 
