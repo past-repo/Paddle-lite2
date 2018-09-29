@@ -35,6 +35,8 @@ DEFINE_string(IA_graphviz_log_root, "./",
 
 DEFINE_string(IA_output_storage_path, "", "optimized model output path");
 
+DEFINE_bool(IA_verbose, false, "Display the analysis details.");
+
 namespace paddle {
 namespace inference {
 namespace analysis {
@@ -104,10 +106,14 @@ void Analyzer::Run(Argument* argument) {
   for (auto& pass : all_ir_passes_) {
     if (!disabled_ir_passes_.count(pass)) {
       passes.push_back(pass);
-      passes.push_back("graph_viz_pass");  // add graphviz for debug.
+      if (FLAGS_IA_verbose) {
+        passes.push_back("graph_viz_pass");  // add graphviz for debug.
+      }
     }
   }
-  passes.push_back("graph_viz_pass");
+  if (FLAGS_IA_verbose) {
+    passes.push_back("graph_viz_pass");
+  }
   argument->Set(kFluidToIrPassesAttr, new std::vector<std::string>(passes));
 
   for (auto& x : data_) {
