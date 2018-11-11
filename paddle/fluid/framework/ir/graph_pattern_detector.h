@@ -87,6 +87,8 @@ struct PDNode {
     return this;
   }
 
+  const std::vector<teller_t>& asserts() const { return asserts_; }
+
   bool IsIntermediate() const { return role_ == Role::kIntermediate; }
   bool IsInput() const { return role_ == Role::kInput; }
   bool IsOutput() const { return role_ == Role::kOutput; }

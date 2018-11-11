@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "paddle/fluid/framework/ir/graph_pattern_detector.h"
+#include "paddle/fluid/framework/ir/ut_helper.h"
 
 #include <gtest/gtest.h>
 
@@ -20,41 +21,6 @@ namespace paddle {
 namespace framework {
 namespace ir {
 
-void BuildGraph(Graph* g) {
-  ir::Node* o1 = g->CreateEmptyNode("op1", Node::Type::kOperation);
-  ir::Node* o2 = g->CreateEmptyNode("op2", Node::Type::kOperation);
-  ir::Node* o3 = g->CreateEmptyNode("op3", Node::Type::kOperation);
-  ir::Node* o4 = g->CreateEmptyNode("op4", Node::Type::kOperation);
-  ir::Node* o5 = g->CreateEmptyNode("op5", Node::Type::kOperation);
-  ir::Node* v1 = g->CreateEmptyNode("var1", Node::Type::kVariable);
-  ir::Node* v2 = g->CreateEmptyNode("var2", Node::Type::kVariable);
-  ir::Node* v3 = g->CreateEmptyNode("var3", Node::Type::kVariable);
-  ir::Node* v4 = g->CreateEmptyNode("var4", Node::Type::kVariable);
-
-  // o1->v1->o2
-  o1->outputs.push_back(v1);
-  o2->inputs.push_back(v1);
-  v1->inputs.push_back(o1);
-  v1->outputs.push_back(o2);
-  // o2->v2->o3
-  // o2->v2->o4
-  o2->outputs.push_back(v2);
-  o3->inputs.push_back(v2);
-  o4->inputs.push_back(v2);
-  v2->inputs.push_back(o2);
-  v2->outputs.push_back(o3);
-  v2->outputs.push_back(o4);
-  // o2->v3->o5
-  o2->outputs.push_back(v3);
-  o5->inputs.push_back(v3);
-  v3->inputs.push_back(o2);
-  v3->outputs.push_back(o5);
-  // o3-v4->o5
-  o3->outputs.push_back(v4);
-  o5->inputs.push_back(v4);
-  v4->inputs.push_back(o3);
-  v4->outputs.push_back(o5);
-}
 
 TEST(PDPattern, NewNode) {
   PDPattern x;
