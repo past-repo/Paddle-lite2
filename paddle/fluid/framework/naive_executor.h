@@ -38,6 +38,10 @@ class NaiveExecutor {
   void Prepare(Scope* scope, const ProgramDesc& program_desc, int block_id,
                bool with_feed_fetch_ops);
 
+  // Just set the execution scope, one can use this API in a while_op, call
+  // SetScope first, then Run.
+  void SetScope(Scope* scope) { scope_ = scope; }
+
   // Create variables before head.
   // Create parameters if persistable is ture, or create the temporary variables
   // instead.
