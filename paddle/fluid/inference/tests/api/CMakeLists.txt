@@ -108,3 +108,7 @@ if(WITH_GPU AND TENSORRT_FOUND)
      ARGS --dirname=${TRT_MODEL_INSTALL_DIR}/trt_test_models
      DEPS paddle_inference_tensorrt_subgraph_engine)
 endif()
+
+cc_test(test_vis_coco SRCS vis_coco_tester.cc DEPS analysis_predictor framework_proto
+        ${INFERENCE_EXTRA_DEPS}
+        )
