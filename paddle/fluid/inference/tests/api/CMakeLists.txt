@@ -30,6 +30,9 @@ function(inference_analysis_api_test_with_fake_data target install_dir filename 
         ARGS --infer_model=${install_dir}/model)
 endfunction()
 
+inference_analysis_test(test1 SRCS test1.cc
+        EXTRA_DEPS ${INFERENCE_EXTRA_DEPS})
+
 # RNN1
 if(NOT APPLE AND WITH_MKLML)
     set(RNN1_INSTALL_DIR "${INFERENCE_DEMO_INSTALL_DIR}/rnn1")
