@@ -20,6 +20,9 @@
 #include "paddle/fluid/framework/program_desc.h"
 #include "paddle/fluid/framework/scope.h"
 #include "paddle/fluid/platform/device_context.h"
+#include "paddle/fluid/platform/engine.h"
+
+DECLARE_int32(engine_size);
 
 namespace paddle {
 namespace framework {
@@ -30,7 +33,11 @@ namespace framework {
  */
 class NaiveExecutor {
  public:
-  explicit NaiveExecutor(const platform::Place& place) : place_(place) {}
+  explicit NaiveExecutor(const platform::Place& place) : place_(place) {
+    engine::EngineProperty prop;
+    prop.num_cpu_threads = FLAGS_engine_size;
+    engine_ = engine::CreateEngine("MultiThreadEnginePooled", prop);
+  }
 
   // Create child scope.
   // Create variables.
@@ -54,6 +61,9 @@ class NaiveExecutor {
 
   void CleanFeedFetchOps();
 
+  std::unordered_set<std::string> GetOpInputs(const OpDesc& op);
+  std::unordered_set<std::string> GetOpOutputs(const OpDesc& op);
+
  protected:
   void CreateOps(const ProgramDesc& desc, int block_id,
                  bool with_feed_fetch_ops);
@@ -63,6 +73,8 @@ class NaiveExecutor {
   // Catch the required resource to avoid recreate.
   std::vector<std::unique_ptr<OperatorBase>> ops_;
   Scope* scope_;
+  std::shared_ptr<engine::Engine> engine_;
+  std::unordered_map<std::string, engine::ResourceHandle> engine_resources_;
 };
 
 }  // namespace framework

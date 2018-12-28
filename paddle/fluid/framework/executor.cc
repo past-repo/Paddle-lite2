@@ -100,7 +100,7 @@ static void DeleteUnusedTensors(
           continue;
         }
         auto* var = scope.FindVar(name);
-        if (var != nullptr) {
+        if (var == nullptr) {
           continue;
         }
 
@@ -119,7 +119,7 @@ static void DeleteUnusedTensors(
           }
         } else {
           PADDLE_THROW("Type %s of %s is not supported eager deletion",
-                       var->Type().name(), name);
+                       framework::ToTypeName(var->Type()), name);
         }
       }
     }
