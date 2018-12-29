@@ -12,12 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/ir/infer_clean_graph_pass.h"
+#pragma once
+#include "paddle/fluid/framework/ir/pass.h"
+
 namespace paddle {
 namespace framework {
-namespace ir {}  // namespace ir
+namespace ir {
+
+// sub-block graph as an attribute in the graph.
+const char kSubblockGraphAttr[] = "__sub_block_grpah__";
+
+class SubblockToGraphPass : public Pass {
+ public:
+  using subgraphs_t = std::unordered_map<const Node*, std::unique_ptr<Graph>>;
+  std::unique_ptr<ir::Graph> ApplyImpl(std::unique_ptr<ir::Graph> graph) const;
+};
+
+}  // namespace ir
 }  // namespace framework
 }  // namespace paddle
-
-REGISTER_PASS(infer_clean_graph_pass,
-              paddle::framework::ir::InferCleanGraphPass);

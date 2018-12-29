@@ -249,12 +249,14 @@ TEST(Analyzer_rnn1, profile_with_async) {
   std::vector<std::vector<PaddleTensor>> input_slots_all;
   SetInput(&input_slots_all);
   // Just test with one record;
-  //input_slots_all.resize(1);
-  TestPrediction(reinterpret_cast<const PaddlePredictor::Config *>(&cfg),
-                 input_slots_all, &outputs, FLAGS_num_threads);
+  // input_slots_all.resize(1);
+  // TestPrediction(reinterpret_cast<const PaddlePredictor::Config *>(&cfg),
+  // input_slots_all, &outputs, FLAGS_num_threads);
 
-  //auto p = CreatePaddlePredictor(cfg);
-  //ASSERT_TRUE(p->Run(input_slots_all.front(),  &outputs));
+  auto p = CreatePaddlePredictor(cfg);
+  for (int i = 0; i < FLAGS_repeat; i++) {
+    ASSERT_TRUE(p->Run(input_slots_all.front(), &outputs));
+  }
 }
 
 // Check the fuse status

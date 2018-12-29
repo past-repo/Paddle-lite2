@@ -67,16 +67,15 @@ class WhileOp : public framework::OperatorBase {
 
     auto step_scopes =
         scope.FindVar(Output(kStepScopes))->GetMutable<StepScopeVar>();
+    step_scopes->clear();
 
     // bool is_test = Attr<bool>("is_test");
     auto *block = Attr<framework::BlockDesc *>(kStepBlock);
     auto *program = block->Program();
     // if (!is_test || !run_by_executor_) {  // for Executor or train
-    if (false) {
+    if (true) {
       framework::Executor executor(dev_place);
-
-      LOG(INFO) << "Running with executor";
-
+      // LOG(INFO) << "Running with executor";
       auto &skip_vars = Attr<std::vector<std::string>>(kSkipEagerDeletionVars);
       VLOG(2) << GetSkipEagerDeletionVarsDebugString(skip_vars);
 
@@ -89,7 +88,7 @@ class WhileOp : public framework::OperatorBase {
                                     true);
       }
     } else {  // for inference NaiveExecutor
-      //LOG(INFO) << "running NaiveExecutor in WhileOp";
+      // LOG(INFO) << "running NaiveExecutor in WhileOp";
       // Avoid keep creating new operators and scopes for each batch.
       if (!ops_created_) {
         LOG(INFO) << "create operators";
@@ -103,7 +102,8 @@ class WhileOp : public framework::OperatorBase {
           auto &new_scope = scope.NewScope();
           step_scopes->push_back(&new_scope);
           // Create step scope for each step.
-          naive_executor_.CreateVariables(*program, block->ID(), false, &new_scope);
+          naive_executor_.CreateVariables(*program, block->ID(), false,
+                                          &new_scope);
           naive_executor_.SetScope(&new_scope);
         }
 
@@ -123,8 +123,8 @@ class WhileOp : public framework::OperatorBase {
                                     const framework::Scope *scope,
                                     int block_id) const {
     // Create ops.
-    naive_executor_.Prepare(const_cast<framework::Scope *>(scope), program, block_id,
-                            true);
+    naive_executor_.Prepare(const_cast<framework::Scope *>(scope), program,
+                            block_id, true);
   }
 
   // NaiveExecutor only works on test mode.

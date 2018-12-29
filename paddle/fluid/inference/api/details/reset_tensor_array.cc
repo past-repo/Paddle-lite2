@@ -65,6 +65,7 @@ void TensorArrayBatchCleaner::CollectNoTensorVars(framework::Scope *scope) {
 
 void TensorArrayBatchCleaner::ResetNoTensorVars() {
   for (auto *var : no_tensor_vars_) {
+    // LOG(INFO) << "clean " << var;
     var->Clear();
   }
 }

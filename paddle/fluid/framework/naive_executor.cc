@@ -131,17 +131,19 @@ void NaiveExecutor::Run() {
 
     op->SetIsCalledByExecutor(false);
 
-    for (auto& x : engine_resources_) {
-      auto debug =
-    static_cast<engine::ThreadedResource*>(x.second.get())->debug_string();
+    /*
+    for (auto &x : engine_resources_) {
+      auto debug = static_cast<engine::ThreadedResource *>(x.second.get())
+                       ->debug_string();
       if (!debug.empty()) {
         LOG(INFO) << debug;
       } else {
       }
     }
     LOG(INFO) << "---------------- depend ends ----------------------";
+     */
 
-    LOG(INFO) << ">> push task " << op->DebugStringEx(scope_);
+    // LOG(INFO) << ">> push task " << op->DebugStringEx(scope_);
 
     engine_->PushAsync(fn, ctx, inputs, outputs);
   }
