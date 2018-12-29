@@ -61,8 +61,8 @@ void NaiveExecutor::Prepare(Scope *scope, const ProgramDesc &program_desc,
   CreateOps(program_desc, block_id, with_feed_fetch_ops);
 
   // Create engine resources
-  for (size_t i = 0; i < program_desc.Block(0).OpSize(); i++) {
-    const auto &op = program_desc.Block(0).Op(i);
+  for (size_t i = 0; i < program_desc.Block(block_id).OpSize(); i++) {
+    const auto &op = program_desc.Block(block_id).Op(i);
     // inputs is enough ?
     auto inputs = GetOpInputs(*op);
     auto outputs = GetOpOutputs(*op);
@@ -131,7 +131,6 @@ void NaiveExecutor::Run() {
 
     op->SetIsCalledByExecutor(false);
 
-    /*
     for (auto& x : engine_resources_) {
       auto debug =
     static_cast<engine::ThreadedResource*>(x.second.get())->debug_string();
@@ -143,7 +142,7 @@ void NaiveExecutor::Run() {
     LOG(INFO) << "---------------- depend ends ----------------------";
 
     LOG(INFO) << ">> push task " << op->DebugStringEx(scope_);
-     */
+
     engine_->PushAsync(fn, ctx, inputs, outputs);
   }
 

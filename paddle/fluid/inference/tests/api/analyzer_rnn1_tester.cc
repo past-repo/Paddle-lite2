@@ -237,6 +237,26 @@ TEST(Analyzer_rnn1, profile) {
                  input_slots_all, &outputs, FLAGS_num_threads);
 }
 
+TEST(Analyzer_rnn1, profile_with_async) {
+  contrib::AnalysisConfig cfg(false);
+  SetConfig(&cfg);
+  cfg.pass_builder()->DeletePass("attention_lstm_fuse_pass");
+  cfg.pass_builder()->DeletePass("seq_concat_fc_fuse_pass");
+  cfg.fraction_of_gpu_memory = 0.1;
+  cfg.pass_builder()->TurnOnDebug();
+  std::vector<PaddleTensor> outputs;
+
+  std::vector<std::vector<PaddleTensor>> input_slots_all;
+  SetInput(&input_slots_all);
+  // Just test with one record;
+  //input_slots_all.resize(1);
+  TestPrediction(reinterpret_cast<const PaddlePredictor::Config *>(&cfg),
+                 input_slots_all, &outputs, FLAGS_num_threads);
+
+  //auto p = CreatePaddlePredictor(cfg);
+  //ASSERT_TRUE(p->Run(input_slots_all.front(),  &outputs));
+}
+
 // Check the fuse status
 TEST(Analyzer_rnn1, fuse_statis) {
   contrib::AnalysisConfig cfg;

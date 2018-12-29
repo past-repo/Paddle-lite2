@@ -105,7 +105,7 @@ bool TaskQueue<T>::Pop(T *cv) {
   std::unique_lock<std::mutex> l(mut_);
   cv_.wait(l, [this] { return !queue_.empty() || killed_.load(); });
   if (killed_.load()) {
-    LOG(WARNING) << "kill signal get, all threads will exit";
+    //LOG(WARNING) << "kill signal get, all threads will exit";
     return false;
   }
   *cv = std::move(queue_.front());
@@ -122,7 +122,7 @@ size_t TaskQueue<T>::Size() const {
 template <typename T>
 void TaskQueue<T>::SignalForKill() {
   killed_ = true;
-  LOG(INFO) << "queue singal for kill...";
+  VLOG(2) << "queue singal for kill...";
   cv_.notify_all();
 }
 
