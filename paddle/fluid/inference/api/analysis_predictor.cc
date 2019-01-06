@@ -181,6 +181,7 @@ bool AnalysisPredictor::Run(const std::vector<PaddleTensor> &inputs,
 
   // Run the inference program
   // if share variables, we need not create variables
+  LOG(INFO) << "New start ...";
   executor_->Run();
 
   // get fetch variable

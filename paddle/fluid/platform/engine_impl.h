@@ -14,12 +14,14 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <gtest/gtest_prod.h>
 #include <atomic>  // NOLINT
 #include <deque>
 #include <mutex>  // NOLINT
 #include <string>
 #include <thread>  // NOLINT
+#include <unordered_set>
 #include <vector>
 #include "engine.h"
 
@@ -57,7 +59,7 @@ struct Operation {
     return static_cast<T *>(this);
 #else
     auto ptr = dynamic_cast<T *>(this);
-    CHECK(ptr) << "wrong operation type";
+    //CHECK(ptr) << "wrong operation type";
     return ptr;
 #endif
   }
@@ -186,6 +188,12 @@ class ThreadedOperationTestHelper {
 class ThreadedResource : public Resource {
  public:
   using Dispatcher = std::function<void(OperationHandle)>;
+  struct OperationBlock {
+    OperationHandle operation;
+    bool is_write{false};
+    OperationBlock(OperationHandle operation, bool is_write)
+        : operation(operation), is_write(is_write) {}
+  };
 
   ThreadedResource(const Dispatcher &dispatcher, const std::string &name = "")
       : dispatcher_(dispatcher), name_(name) {}
@@ -201,20 +209,15 @@ class ThreadedResource : public Resource {
 
   const std::string &name() const { return name_; }
 
+  const std::deque<OperationBlock> &queue() const { return queue_; }
+
  protected:
   void ProcessQueueFront();
   friend class ThreadedResourceTestHelper;
 
  private:
-  struct ResourceBlock {
-    OperationHandle operation;
-    bool is_write{false};
-    ResourceBlock(OperationHandle operation, bool is_write)
-        : operation(operation), is_write(is_write) {}
-  };
-
   // task queue depend on this resource.
-  std::deque<ResourceBlock> queue_;
+  std::deque<OperationBlock> queue_;
   std::atomic<int> running_read_count_{0};
   std::atomic<bool> write_is_running_{false};
   std::mutex mut_;
@@ -234,5 +237,22 @@ class ThreadedResourceTestHelper {
     return res->Cast<ThreadedResource>()->queue_.size();
   }
 };
+
+static void TaskQueueStatus(const std::vector<ResourceHandle> &resources) {
+  std::unordered_set<Operation*> oprs;
+
+  for (const auto &resource : resources) {
+    for (auto &block : resource->Cast<ThreadedResource>()->queue()) {
+      auto &opr = block.operation;
+      oprs.insert(opr.get());
+    }
+  }
+
+  LOG(INFO) << "start --------------";
+  for (auto &opr : oprs) {
+    LOG(INFO) << "pending task " << opr->Cast<ThreadedOperation>()->name;
+  }
+  LOG(INFO) << "end <<<<<<<<<<<<<<<<";
+}
 
 }  // namespace engine

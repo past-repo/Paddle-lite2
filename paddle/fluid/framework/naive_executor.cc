@@ -124,9 +124,10 @@ void NaiveExecutor::Run() {
     // Push tasks
     engine::Engine::AsyncFn fn = [this, &op](engine::RunContext ctx,
                                              engine::CallbackOnComplete cb) {
-      // LOG(INFO) << "real running " << op->DebugStringEx(scope_);
+      LOG(INFO) << ">> real running " << op->DebugStringEx(scope_);
       op->Run(*scope_, place_);
       cb();
+      LOG(INFO) << "<< done running " << op->DebugStringEx(scope_);
     };
 
     op->SetIsCalledByExecutor(false);
@@ -145,7 +146,14 @@ void NaiveExecutor::Run() {
 
     // LOG(INFO) << ">> push task " << op->DebugStringEx(scope_);
 
-    engine_->PushAsync(fn, ctx, inputs, outputs);
+    auto opr = engine_->NewOperation(fn, inputs, outputs, op->DebugString());
+    engine_->PushAsync(opr, ctx);
+
+    std::vector<engine::ResourceHandle> resources;
+    for (auto &item : engine_resources_) {
+      resources.push_back(item.second);
+    }
+    //engine::TaskQueueStatus(resources);
   }
 
   engine_->WaitForAllFinished();

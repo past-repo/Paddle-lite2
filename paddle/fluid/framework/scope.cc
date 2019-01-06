@@ -47,9 +47,9 @@ DEFINE_bool(fast_eager_deletion_mode, false,
 // the mutex will cause serious performance issue.
 // So the mutex is disabled when `ON_INFER`.
 //#ifdef PADDLE_ON_INFERENCE
-//#define SCOPE_LOCK_GUARD
+#define SCOPE_LOCK_GUARD
 //#else
-#define SCOPE_LOCK_GUARD std::lock_guard<std::mutex> lock(mutex_);
+//#define SCOPE_LOCK_GUARD std::lock_guard<std::mutex> lock(mutex_);
 //#endif
 
 namespace paddle {

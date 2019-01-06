@@ -73,7 +73,7 @@ class WhileOp : public framework::OperatorBase {
     auto *block = Attr<framework::BlockDesc *>(kStepBlock);
     auto *program = block->Program();
     // if (!is_test || !run_by_executor_) {  // for Executor or train
-    if (true) {
+    if (false) {
       framework::Executor executor(dev_place);
       // LOG(INFO) << "Running with executor";
       auto &skip_vars = Attr<std::vector<std::string>>(kSkipEagerDeletionVars);

@@ -41,6 +41,8 @@ class TaskQueue {
 
   bool Pop(T *rv);
 
+  T &front() { return queue_.front(); }
+
   // Tell all blocking pop will return false.
   void SignalForKill();
 

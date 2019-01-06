@@ -50,7 +50,7 @@ void ThreadedResource::FinishedDependency(OperationHandle opr, bool is_write) {
     if (is_write) {
       write_is_running_ = false;
     } else {
-      running_read_count_--;
+      --running_read_count_;
     }
 
     ProcessQueueFront();
@@ -131,18 +131,13 @@ std::string ThreadedResource::debug_string() const {
 class MultiThreadEngine : public Engine {
  public:
   void PushAsync(OperationHandle opr, RunContext ctx) override {
+    /*
 #if USE_PROFILE
     auto opr_name = opr->Cast<ThreadedOperation>()->name;
 // profile::Profiler::Get()->AddPushAction(opr_name);
 #endif
-    inc_num_pendding_tasks();
-
-    /*
-    auto dispatcher = [this](OperationHandle opr) {
-      DLOG(INFO) << "dispatch the opr";
-      this->PushToExecute(opr);
-    };
      */
+    inc_num_running_tasks();
 
     auto topr = opr->Cast<ThreadedOperation>();
     topr->ctx = ctx;
@@ -156,7 +151,7 @@ class MultiThreadEngine : public Engine {
       res->template Cast<ThreadedResource>()->AppendDependency(opr, true);
     }
 
-    // LOG(INFO) << "status: \n" << StatusInfo();
+    LOG(INFO) << "status: \n" << StatusInfo();
   }
 
   void PushSync(SyncFn fn, RunContext ctx,
@@ -181,7 +176,7 @@ class MultiThreadEngine : public Engine {
     // LOG(INFO) << "num_pending_tasks_ " << num_pending_tasks_;
     std::unique_lock<std::mutex> l(mut_);
     finish_cond_.wait(
-        l, [this]() { return num_pending_tasks_ == 0 || terminated_; });
+        l, [this]() { return num_running_tasks_ == 0 || terminated_; });
     DLOG(INFO) << "WaitForAllFinished done";
   }
 
@@ -208,7 +203,7 @@ class MultiThreadEngine : public Engine {
         var->Cast<ThreadedResource>()->FinishedDependency(opr, true);
       }
       auto engine_ptr = static_cast<MultiThreadEngine *>(engine);
-      engine_ptr->dec_num_pending_tasks();
+        engine_ptr->dec_num_running_tasks();
       /*
 #if USE_PROFILE
       profile::Profiler::Get()->AddFinishAction(
@@ -219,16 +214,15 @@ class MultiThreadEngine : public Engine {
     return CallbackOnComplete(opr, &fn, (void *)engine);
   }
 
+  int num_running_tasks() const { return num_running_tasks_; }
+
  protected:
-  void inc_num_pendding_tasks() {
-    inc_count++;
-    num_pending_tasks_++;
+  void inc_num_running_tasks() {
+    ++num_running_tasks_;
   }
-  void dec_num_pending_tasks() {
-    dec_count++;
-    num_pending_tasks_--;
-    DLOG(INFO) << " engine pending tasks: " << num_pending_tasks_ << " "
-               << inc_count << " " << dec_count;
+  void dec_num_running_tasks() {
+    --num_running_tasks_;
+    DLOG(INFO) << " engine pending tasks: " << num_running_tasks_;
     finish_cond_.notify_all();
   }
   // NOTE should be updated by Terminate method.
@@ -236,13 +230,11 @@ class MultiThreadEngine : public Engine {
   std::atomic<bool> terminated_{false};
   // number of tasks in engine.
   // NOTE should be updated in CallbackOnComplted.
-  std::atomic<int> num_pending_tasks_{0};
+  std::atomic<int> num_running_tasks_{0};
   // Condition variable used to determine whether all the tasks are finished.
   std::condition_variable finish_cond_;
   std::atomic<uint64_t> sync_counter_;
   std::mutex mut_;
-  int inc_count{0};
-  int dec_count{0};
 };
 
 // ----------------------------------------------------------------------------
@@ -342,12 +334,20 @@ std::shared_ptr<Engine> CreateEngine(const std::string &kind,
 
 std::string MultiThreadEnginePooled::StatusInfo() const {
   std::stringstream ss;
-  ss << "io task queue size: " << io_task_workers_->task_queue.Size() << "\n";
-  ss << "io queue thread count: " << io_task_workers_->workers.Size() << "\n";
+  ss << "num pending tasks " << num_running_tasks_ << "\n";
+  // ss << "io task queue size: " << io_task_workers_->task_queue.Size() <<
+  // "\n";
+  // ss << "io queue thread count: " << io_task_workers_->workers.Size() <<
+  // "\n";
   ss << "common task queue size: " << common_task_workers_->task_queue.Size()
      << "\n";
-  ss << "common queue thread count: " << common_task_workers_->workers.Size()
-     << "\n";
+  if (common_task_workers_->task_queue.Size()) {
+    auto ptr =
+        common_task_workers_->task_queue.front()->Cast<ThreadedOperation>();
+    if (ptr) ss << "front: " << ptr->name << "\n";
+  }
+  // ss << "common queue thread count: " << common_task_workers_->workers.Size()
+  // << "\n";
   return ss.str();
 }
 
