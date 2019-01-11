@@ -138,6 +138,7 @@ void SetConfig(AnalysisConfig *cfg, bool use_mkldnn = false) {
   cfg->DisableGpu();
   cfg->SwitchSpecifyInputNames();
   cfg->pass_builder()->TurnOnDebug();
+  LOG(INFO) << "cpu threads per each instances : " << FLAGS_paddle_num_threads;
   cfg->SetCpuMathLibraryNumThreads(FLAGS_paddle_num_threads);
   if (use_mkldnn) {
     cfg->EnableMKLDNN();
@@ -289,6 +290,8 @@ TEST(Analyzer_seq_pool1, zerocopy_profile_threads) {
         predictor->ZeroCopyRun();
       }
       total_time += timer.toc();
+      total_time_of_threads += total_time;
+
       LOG(INFO) << "thread time: " << total_time / repeat_times;
     });
   }
