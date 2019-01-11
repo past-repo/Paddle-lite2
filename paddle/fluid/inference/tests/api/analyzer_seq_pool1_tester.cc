@@ -222,7 +222,7 @@ std::vector<float> zerocopy_profile(int repeat_times) {
   auto predictor = CreatePaddlePredictor<AnalysisConfig>(config);
   std::vector<std::unique_ptr<ZeroCopyTensor>> inputs;
   PrepareZeroCopyInputs(predictor, &inputs);
-  auto output_tensor = predictor->GetOutputTensor("reduce_sum_0.tmp_0");
+  auto output_tensor = predictor->GetOutputTensor("similarity_norm.tmp_0");
   Timer timer;
   LOG(INFO) << "Warm up run...";
   timer.tic();
@@ -239,7 +239,7 @@ std::vector<float> zerocopy_profile(int repeat_times) {
   PrintTime(FLAGS_batch_size, repeat_times, 1, 0, timer.toc() / repeat_times,
             1);
 
-  VLOG(3) << "ZeroCopy output: " << DescribeZeroCopyTensor(*output_tensor);
+  LOG(INFO) << "ZeroCopy output: " << DescribeZeroCopyTensor(*output_tensor);
   PaddlePlace place;
   int output_size{0};
   auto *pdata = output_tensor->data<float>(&place, &output_size);
@@ -264,6 +264,8 @@ TEST(Analyzer_seq_pool1, zerocopy_compare_native) {
   SetInput(&input_slots_all);
   ASSERT_TRUE(predictor->Run(input_slots_all[0], &native_outputs));
   EXPECT_EQ(native_outputs.size(), 1UL);
+
+  LOG(INFO) << "native output " << DescribeTensor(native_outputs.front());
 
   auto zerocopy_output = zerocopy_profile(1);
   EXPECT_EQ(zerocopy_output.size() * sizeof(float),
