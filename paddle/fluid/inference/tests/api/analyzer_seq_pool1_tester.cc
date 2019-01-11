@@ -41,7 +41,7 @@ struct DataRecord {
 
   void Load(const std::string &path) {
     std::ifstream file(path);
-    constexpr int num_slots = 154;
+    constexpr int num_slots = 111;  // 154;
     std::string line;
     int num_lines = 0;
     while (std::getline(file, line)) {
@@ -223,7 +223,8 @@ std::vector<float> zerocopy_profile(int repeat_times) {
   auto predictor = CreatePaddlePredictor<AnalysisConfig>(config);
   std::vector<std::unique_ptr<ZeroCopyTensor>> inputs;
   PrepareZeroCopyInputs(predictor, &inputs);
-  auto output_tensor = predictor->GetOutputTensor("similarity_norm.tmp_0");
+  auto output_tensor =
+      predictor->GetOutputTensor("fc_4.tmp_1");  // ("similarity_norm.tmp_0");
   Timer timer;
   LOG(INFO) << "Warm up run...";
   timer.tic();
