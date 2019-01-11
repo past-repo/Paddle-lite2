@@ -263,7 +263,8 @@ TEST(Analyzer_seq_pool1, zerocopy_profile_threads) {
   std::vector<std::thread> threads;
   std::vector<std::unique_ptr<PaddlePredictor>> predictors;
   for (int tid = 0; tid < FLAGS_num_threads; tid++) {
-    predictors.emplace_back(CreatePaddlePredictor<AnalysisConfig>(config));
+    predictors.emplace_back(base_predictor->Clone());
+    //    predictors.emplace_back(CreatePaddlePredictor<AnalysisConfig>(config));
   }
 
   for (int tid = 0; tid < FLAGS_num_threads; tid++) {
@@ -278,7 +279,7 @@ TEST(Analyzer_seq_pool1, zerocopy_profile_threads) {
       LOG(INFO) << "Warm up run...";
       timer.tic();
       predictor->ZeroCopyRun();
-      PrintTime(FLAGS_batch_size, 1, 1, 0, timer.toc(), 1);
+      PrintTime(FLAGS_batch_size, 1, FLAGS_num_threads, tid, timer.toc(), 1);
       if (FLAGS_profile) {
         paddle::platform::ResetProfiler();
       }
