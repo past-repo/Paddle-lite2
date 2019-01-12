@@ -41,9 +41,11 @@ void TensorArrayBatchCleaner::CollectTensorArrays(framework::Scope *scope) {
 
 // Should be called when `Run` finished.
 void TensorArrayBatchCleaner::ResetTensorArray() {
+  /*
   for (auto *arr : arrays_) {
     arr->clear();
   }
+  */
 }
 
 void TensorArrayBatchCleaner::CollectNoTensorVars(framework::Scope *scope) {
@@ -64,9 +66,11 @@ void TensorArrayBatchCleaner::CollectNoTensorVars(framework::Scope *scope) {
 }
 
 void TensorArrayBatchCleaner::ResetNoTensorVars() {
+  /*
   for (auto *var : no_tensor_vars_) {
     var->Clear();
   }
+  */
 }
 
 }  // namespace details

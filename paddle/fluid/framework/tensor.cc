@@ -17,6 +17,11 @@ limitations under the License. */
 
 namespace paddle {
 namespace framework {
+
+Tensor::Tensor() : type_(proto::VarType::FP32), offset_(0) {
+  //LOG(INFO) << "new tensor";
+}
+
 extern size_t SizeOfType(proto::VarType::Type type);
 void Tensor::check_memory_size() const {
   PADDLE_ENFORCE_NOT_NULL(
