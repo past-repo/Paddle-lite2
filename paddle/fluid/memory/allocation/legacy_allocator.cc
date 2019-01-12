@@ -88,6 +88,7 @@ struct NaiveAllocator {
 
 template <>
 void *Alloc<platform::CPUPlace>(const platform::CPUPlace &place, size_t size) {
+  LOG(INFO) << "allocating memory " << size;
   VLOG(10) << "Allocate " << size << " bytes on " << platform::Place(place);
   void *p = GetCPUBuddyAllocator()->Alloc(size);
   if (FLAGS_init_allocated_mem) {
@@ -100,6 +101,7 @@ void *Alloc<platform::CPUPlace>(const platform::CPUPlace &place, size_t size) {
 template <>
 void Free<platform::CPUPlace>(const platform::CPUPlace &place, void *p) {
   VLOG(10) << "Free pointer=" << p << " on " << platform::Place(place);
+  LOG(INFO) << "free memory";
   GetCPUBuddyAllocator()->Free(p);
 }
 
