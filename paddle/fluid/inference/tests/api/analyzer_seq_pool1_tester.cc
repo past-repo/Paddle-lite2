@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include <gperftools/profiler.h>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -41,7 +42,7 @@ struct DataRecord {
 
   void Load(const std::string &path) {
     std::ifstream file(path);
-    constexpr int num_slots = 111;  // 154;
+    //constexpr int num_slots = 111;  // 154;
     std::string line;
     int num_lines = 0;
     while (std::getline(file, line)) {
@@ -55,13 +56,14 @@ struct DataRecord {
                         "line %d, %s should be divisible", num_lines, name);
       datasets[name].emplace_back(std::move(slot_data));
     }
-    LOG(INFO) << "lines " << num_lines;
-    LOG(INFO) << "num_slots " << num_slots;
-    //num_samples = num_lines / num_slots;
+    //LOG(INFO) << "lines " << num_lines;
+    //LOG(INFO) << "num_slots " << num_slots;
+    // num_samples = num_lines / num_slots;
     num_samples = 1;
-    //PADDLE_ENFORCE_EQ(num_samples * num_slots, static_cast<size_t>(num_lines),
-                      //"num samples should be divisible");
-    //PADDLE_ENFORCE_GT(num_samples, 0);
+    // PADDLE_ENFORCE_EQ(num_samples * num_slots,
+    // static_cast<size_t>(num_lines),
+    //"num samples should be divisible");
+    // PADDLE_ENFORCE_GT(num_samples, 0);
   }
 
   void Prepare(int bs) {
@@ -280,25 +282,34 @@ TEST(Analyzer_seq_pool1, zerocopy_profile_threads) {
       auto output_tensor = predictor->GetOutputTensor("similarity_norm.tmp_0");
       Timer timer;
       double total_time{0};
+      /*
 
       LOG(INFO) << "Warm up run...";
       timer.tic();
+
       predictor->ZeroCopyRun();
+
       PrintTime(FLAGS_batch_size, 1, FLAGS_num_threads, tid, timer.toc(), 1);
       if (FLAGS_profile) {
         paddle::platform::ResetProfiler();
       }
+      */
       int repeat_times = FLAGS_repeat;
-      LOG(INFO) << "Run " << repeat_times << " times...";
+      //LOG(INFO) << "Run " << repeat_times << " times...";
       timer.tic();
 
+      // ProfilerStart(
+      //     "/home/chunwei/project/Paddle/cmake-build-relwithdebinfo/4.profile");
       for (int i = 0; i < repeat_times; i++) {
+          LOG(INFO) << "pass " << i;
         predictor->ZeroCopyRun();
       }
+      // ProfilerStop();
+
       total_time = timer.toc();
       total_time_of_threads += total_time;
 
-      //LOG(INFO) << "thread time: " << total_time / repeat_times;
+      // LOG(INFO) << "thread time: " << total_time / repeat_times;
     });
   }
 

@@ -169,13 +169,13 @@ void OperatorBase::Run(const Scope& scope, const platform::Place& place) {
   // The profile has a process-wide mutex, results in serious performance issue
   // in concurrency scenerio. Here use an `if` to fix this issue.
   // Please not remove the `if`, ask @Superjomn if there are any concern.
-  if (platform::IsProfileEnabled()) {
-    platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();
-    platform::RecordEvent record_event(Type(), pool.Get(place));
+  // if (platform::IsProfileEnabled()) {
+  //   platform::DeviceContextPool& pool = platform::DeviceContextPool::Instance();
+  //   platform::RecordEvent record_event(Type(), pool.Get(place));
+  //   RunImpl(scope, place);
+  // } else {
     RunImpl(scope, place);
-  } else {
-    RunImpl(scope, place);
-  }
+  // }
   VLOG(3) << place << " " << DebugStringEx(&scope);
 }
 
@@ -893,7 +893,7 @@ void OperatorWithKernel::RunImpl(const Scope& scope,
 
   auto expected_kernel_key = this->GetExpectedKernelType(
       ExecutionContext(*this, scope, *dev_ctx, ctx));
-  VLOG(3) << "expected_kernel_key:" << expected_kernel_key;
+  VLOG(4) << "expected_kernel_key:" << expected_kernel_key;
 
   auto kernel_iter = kernels.find(expected_kernel_key);
 #ifdef PADDLE_WITH_MKLDNN

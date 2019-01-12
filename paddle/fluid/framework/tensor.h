@@ -67,7 +67,9 @@ class Tensor {
   friend struct EigenVector;
 
  public:
-  Tensor() : type_(proto::VarType::FP32), offset_(0) {}
+  Tensor() : type_(proto::VarType::FP32), offset_(0) {
+    LOG(INFO) << "new tensor";
+  }
 
   explicit Tensor(const proto::VarType::Type&);
 

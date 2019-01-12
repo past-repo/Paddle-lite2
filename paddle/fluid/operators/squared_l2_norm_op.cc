@@ -28,6 +28,8 @@ class SquaredL2NormOp : public framework::OperatorWithKernel {
     PADDLE_ENFORCE(ctx->HasOutput("Out"), "Output(Out) should be not null.");
 
     ctx->SetOutputDim("Out", {1});
+
+    LOG(INFO) << "run SquaredL2NormOp";
   }
 };
 
