@@ -17,6 +17,8 @@ function(download_model_and_data install_dir model_name data_name)
     endif()
 endfunction()
 
+inference_analysis_test(vis2 SRCS vis_2.cc EXTRA_DEPS ${INFERENCE_EXTRA_DEPS})
+
 function(inference_analysis_api_test target install_dir filename)
     inference_analysis_test(${target} SRCS ${filename}
         EXTRA_DEPS ${INFERENCE_EXTRA_DEPS}

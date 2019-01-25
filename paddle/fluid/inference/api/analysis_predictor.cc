@@ -286,6 +286,7 @@ bool AnalysisPredictor::GetFetch(std::vector<PaddleTensor> *outputs,
     PADDLE_ENFORCE((size_t)idx == i);
     framework::LoDTensor &fetch =
         framework::GetFetchVariable(*scope, "fetch", idx);
+
     auto type = fetch.type();
     auto output = &(outputs->at(i));
     output->name = fetchs_[idx]->Input("X")[0];
