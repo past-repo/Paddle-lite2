@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include "paddle/fluid/inference/api/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
@@ -48,6 +49,7 @@ TEST(vis, multi_thread) {
     tensor1_data[2] = 2.9e-1;
   }
 
+  std::mutex mut;
   for (int i = 0; i < 3; i++) {
     threads.emplace_back([&] {
       auto child = predictor->Clone();
@@ -57,6 +59,7 @@ TEST(vis, multi_thread) {
         std::vector<PaddleTensor> outputs;
         timer.tic();
         ASSERT_TRUE(child->Run(inputs, &outputs));
+        std::lock_guard<std::mutex> lk(mut);
         latencies.push_back(timer.toc());
       }
     });
