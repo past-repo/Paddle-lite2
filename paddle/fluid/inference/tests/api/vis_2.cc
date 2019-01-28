@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include <iostream>
 #include <thread>
+#include "paddle/fluid/inference/api/helper.h"
 #include "paddle/fluid/inference/api/paddle_inference_api.h"
 #include "time.h"
 
@@ -17,11 +19,14 @@ TEST(vis, multi_thread) {
 
   auto predictor = CreatePaddlePredictor(config);
   std::vector<std::thread> threads;
+  std::vector<size_t> latencies;
+  inference::Timer timer;
+
   for (int i = 0; i < 3; i++) {
     threads.emplace_back([&] {
       auto child = predictor->Clone();
-      //auto child = CreatePaddlePredictor(config);
-      //auto child = CreatePaddlePredictor(config);
+      // auto child = CreatePaddlePredictor(config);
+      // auto child = CreatePaddlePredictor(config);
       for (int j = 0; j < 10000; j++) {
         std::vector<PaddleTensor> inputs, outputs;
         inputs.resize(2);
@@ -33,7 +38,8 @@ TEST(vis, multi_thread) {
         tensor0.data.Resize(1 * 3 * 225 * 300 * sizeof(float));
 
         for (int i = 0; i < tensor0.data.length() / sizeof(float); i++) {
-          static_cast<float*>(tensor0.data.data())[i] = rand() / RAND_MAX * 256 - 127;
+          static_cast<float*>(tensor0.data.data())[i] =
+              rand() / RAND_MAX * 256 - 127;
         }
 
         tensor1.shape.assign({3, 1});
@@ -43,12 +49,19 @@ TEST(vis, multi_thread) {
         tensor1_data[1] = 3e2;
         tensor1_data[2] = 2.9e-1;
 
+        timer.tic();
         ASSERT_TRUE(child->Run(inputs, &outputs));
+        latencies.push_back(timer.toc());
       }
     });
   }
 
   for (auto& t : threads) {
     t.join();
+  }
+
+  LOG(INFO) << "latencies:";
+  for (auto v : latencies) {
+    std::cout << v << std::endl;
   }
 }
