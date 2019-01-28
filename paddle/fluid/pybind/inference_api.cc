@@ -14,6 +14,7 @@
 
 #include "paddle/fluid/pybind/inference_api.h"
 #include <pybind11/stl.h>
+#include <chrono>  // NOLINT
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -251,6 +252,30 @@ void BindAnalysisPredictor(py::module *m) {
             self.Run(inputs, &outputs);
             return outputs;
           })
+      .def("parallel_evaluate",
+           [](AnalysisPredictor &self, const std::vector<PaddleTensor> &inputs,
+              int num_threads = 1, int repeat = 1000) {
+             std::vector<std::thread> threads;
+             std::atomic<double> latency{0};
+
+             for (int i = 0; i < num_threads; i++) {
+               threads.emplace_back([&] {
+                 std::vector<PaddleTensor> outputs;
+                 auto predictor = self.Clone();
+
+                 auto start = std::chrono::high_resolution_clock::now();
+                 for (int j = 0; j < repeat; j++) {
+                   PADDLE_ENFORCE(predictor->Run(inputs, &outputs));
+                 }
+                 auto end = std::chrono::high_resolution_clock::now();
+                 double latency0 =
+                     static_cast<double>((end - start).count()) * 1000.0;
+                 latency0 /= repeat;
+                 latency = latency + latency0;
+               });
+             }
+             return latency.load();
+           })
       .def("get_input_tensor", &AnalysisPredictor::GetInputTensor)
       .def("get_output_tensor", &AnalysisPredictor::GetOutputTensor)
       .def("zero_copy_run", &AnalysisPredictor::ZeroCopyRun)
