@@ -59,8 +59,9 @@ TEST(vis, multi_thread) {
         std::vector<PaddleTensor> outputs;
         timer.tic();
         ASSERT_TRUE(child->Run(inputs, &outputs));
+        auto time = timer.toc();
         std::lock_guard<std::mutex> lk(mut);
-        latencies.push_back(timer.toc());
+        latencies.push_back(time);
       }
     });
   }
