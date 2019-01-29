@@ -30,7 +30,6 @@ namespace paddle {
 
 class AnalysisPredictor;
 
-// NOTE WIP, not stable yet.
 struct AnalysisConfig {
   AnalysisConfig() = default;
   explicit AnalysisConfig(const AnalysisConfig& other);
