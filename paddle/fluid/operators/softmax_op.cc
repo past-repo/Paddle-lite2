@@ -53,7 +53,11 @@ class SoftmaxOp : public framework::OperatorWithKernel {
     if (platform::CanCUDNNBeUsed(ctx)) {
       library_ = framework::LibraryType::kCUDNN;
     }
+#ifdef PADDLE_ON_INFERENCE
+    library_ = framework::LibraryType::kCUDNN;
 #endif
+#endif // PADDLE_WITH_CUDA
+
 #ifdef PADDLE_WITH_MKLDNN
     if (library_ == framework::LibraryType::kPlain &&
         platform::CanMKLDNNBeUsed(ctx)) {

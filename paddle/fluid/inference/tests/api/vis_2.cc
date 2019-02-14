@@ -50,7 +50,7 @@ TEST(vis, multi_thread) {
   }
 
   std::mutex mut;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 6; i++) {
     threads.emplace_back([&] {
       auto child = predictor->Clone();
       // auto child = CreatePaddlePredictor(config);
