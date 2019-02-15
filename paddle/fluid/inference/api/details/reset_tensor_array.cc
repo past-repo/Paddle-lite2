@@ -42,7 +42,7 @@ void TensorArrayBatchCleaner::CollectTensorArrays(framework::Scope *scope) {
 // Should be called when `Run` finished.
 void TensorArrayBatchCleaner::ResetTensorArray() {
   for (auto *arr : arrays_) {
-    arr->clear();
+    //arr->clear();
   }
 }
 
