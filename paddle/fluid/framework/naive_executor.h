@@ -79,6 +79,8 @@ class NaiveExecutor {
   const platform::Place place_;
   // Catch the required resource to avoid recreate.
   std::vector<Gear> gears_;
+  // The original implementation.
+  std::vector<std::unique_ptr<OperatorBase>> ops_;
   Scope* scope_;
 };
 

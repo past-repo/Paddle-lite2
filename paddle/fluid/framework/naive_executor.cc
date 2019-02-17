@@ -53,11 +53,19 @@ void NaiveExecutor::Run() {
 #endif  // PADDLE_ON_INFERENCE
   inference::Timer timer;
   //timer.tic();
+  if (!FLAGS_global_use_lite_op) {
+      for (auto& op : ops_) {
+        op->SetIsCalledByExecutor(false);
+        op->Run(*scope_, place_);
+      }
+      return;
+  }
+
   for (auto &gear : gears_) {
       timer.tic();
       if (gear.op) {
-        VLOG(4) << std::this_thread::get_id() << " run "
-                << gear.op->DebugStringEx(scope_) << " on scope " << scope_;
+        //LOG(INFO) << std::this_thread::get_id() << " run "
+                //<< gear.op->DebugStringEx(scope_) << " on scope " << scope_;
         gear.op->SetIsCalledByExecutor(false);
         gear.op->Run(*scope_, place_);
       } else {
@@ -120,6 +128,11 @@ void NaiveExecutor::CreateOps(const ProgramDesc &desc, int block_id,
                             op_desc->Input("X")[0], op_desc->Type(),
                             op_desc->Output("Out")[0]);
       continue;
+    }
+
+    if (!FLAGS_global_use_lite_op) {
+        ops_.emplace_back(OpRegistry::CreateOp(*op_desc));
+        continue;
     }
 
     gears_.emplace_back();
