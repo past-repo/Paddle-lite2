@@ -23,7 +23,7 @@ TEST(test, naive) {
   input.shape.assign({FLAGS_batch_size, 210});
   input.data.Resize(FLAGS_batch_size * 210 * sizeof(float));
   auto* data = static_cast<float*>(input.data.data());
-  for (int i = 0; i < 210; i++) {
+  for (int i = 0; i < 210* FLAGS_batch_size; i++) {
     data[i] = rand() / RAND_MAX;
   }
 
@@ -116,7 +116,7 @@ TEST(test, zero) {
   auto input_tensor = predictor->GetInputTensor("x");
   input_tensor->Reshape({FLAGS_batch_size, 210});
   auto* input_data = input_tensor->mutable_data<float>(PaddlePlace::kCPU);
-  for (int i = 0; i < 210; i++) {
+  for (int i = 0; i < 210 * FLAGS_batch_size; i++) {
     input_data[i] = rand() / RAND_MAX;
   }
 

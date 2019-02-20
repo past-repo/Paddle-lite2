@@ -76,6 +76,7 @@ class NaiveExecutor {
                  bool with_feed_fetch_ops, framework::Scope* scope = nullptr);
 
  private:
+  bool shape_checked_{false};
   const platform::Place place_;
   // Catch the required resource to avoid recreate.
   std::vector<Gear> gears_;

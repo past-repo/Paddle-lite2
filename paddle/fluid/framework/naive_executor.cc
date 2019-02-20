@@ -69,13 +69,16 @@ void NaiveExecutor::Run() {
         gear.op->SetIsCalledByExecutor(false);
         gear.op->Run(*scope_, place_);
       } else {
-        PADDLE_ENFORCE(gear.lite_op->CheckShape());
+        if (!shape_checked_) {
+            shape_checked_ = true;
+            PADDLE_ENFORCE(gear.lite_op->CheckShape());
+        }
         PADDLE_ENFORCE(gear.lite_op->InferShape());
         VLOG(3) << "running lite op " << gear.lite_op->DebugString();
         PADDLE_ENFORCE(gear.lite_op->Run());
       }
-      gear.timer += timer.toc();
-      ++gear.run_times;
+      //gear.timer += timer.toc();
+      //++gear.run_times;
   }
   //LOG(INFO) << "op " << gear.name << " takes " << timer.toc();
 }
