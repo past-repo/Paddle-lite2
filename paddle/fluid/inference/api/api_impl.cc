@@ -42,6 +42,9 @@ std::string num2str(T a) {
 }
 }  // namespace
 
+template <>
+PaddlePredictorPtr CreatePaddlePredictor(const NativeConfig &config);
+
 void NativePaddlePredictor::PrepareFeedFetch() {
   for (auto *op : inference_program_->Block(0).AllOps()) {
     if (op->Type() == "feed") {
@@ -283,6 +286,10 @@ bool NativePaddlePredictor::GetFetch(std::vector<PaddleTensor> *outputs,
     }
   }
   return true;
+}
+
+PaddlePredictorPtr NativePaddlePredictor::Copy() {
+  return CreatePaddlePredictor(config_);
 }
 
 template <>

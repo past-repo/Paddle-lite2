@@ -236,7 +236,8 @@ void BindAnalysisConfig(py::module *m) {
       .def("set_model_buffer", &AnalysisConfig::SetModelBuffer)
       .def("model_from_memory", &AnalysisConfig::model_from_memory)
       .def("pass_builder", &AnalysisConfig::pass_builder,
-           py::return_value_policy::reference);
+           py::return_value_policy::reference)
+      .def("parallel_predict", &paddle::contrib::ParallelPredict);
 }
 
 void BindAnalysisPredictor(py::module *m) {

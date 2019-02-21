@@ -67,7 +67,8 @@ class AnalysisPredictor : public PaddlePredictor {
 
   Argument &analysis_argument() { return argument_; }
 
-  std::unique_ptr<PaddlePredictor> Clone() override;
+  PaddlePredictorPtr Clone() override;
+  PaddlePredictorPtr Copy() override;
 
   framework::Scope *scope() { return scope_.get(); }
   framework::ProgramDesc &program() { return *inference_program_; }

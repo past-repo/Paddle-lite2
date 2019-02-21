@@ -25,6 +25,7 @@
 #include <cassert>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 /*! \namespace paddle
@@ -181,6 +182,11 @@ class ZeroCopyTensor {
   mutable void* tensor_{nullptr};
 };
 
+class PaddlePredictor;
+using PaddlePredictorPtr = std::unique_ptr<PaddlePredictor>;
+
+using ZeroCopyTensorPtr = std::unique_ptr<ZeroCopyTensor>;
+
 /** A simple Inference API for Paddle.
  */
 class PaddlePredictor {
@@ -239,7 +245,10 @@ class PaddlePredictor {
   /** Clone a predictor that share the model weights, the Cloned predictor
    * should be thread-safe.
    */
-  virtual std::unique_ptr<PaddlePredictor> Clone() = 0;
+  virtual PaddlePredictorPtr Clone() = 0;
+
+  /** Return a predictor created with the same config */
+  virtual PaddlePredictorPtr Copy() { return nullptr; }
 
   /** Destroy the Predictor.
    */
@@ -311,7 +320,7 @@ struct NativeConfig : public PaddlePredictor::Config {
  * more than one kind of predictors.
  */
 template <typename ConfigT>
-std::unique_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT& config);
+PaddlePredictorPtr CreatePaddlePredictor(const ConfigT& config);
 
 /** NOTE The following APIs are too trivial, we will discard it in the following
  * versions.
@@ -324,10 +333,31 @@ enum class PaddleEngineKind {
 };
 
 template <typename ConfigT, PaddleEngineKind engine>
-std::unique_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT& config);
+PaddlePredictorPtr CreatePaddlePredictor(const ConfigT& config);
 
 int PaddleDtypeSize(PaddleDType dtype);
 
 std::string get_version();
+
+// The following APIs are still in experiment phase, not stable yet.
+namespace contrib {
+
+struct ProfileInfo {
+  size_t num_threads;
+  // Average latency for each thread.
+  size_t average_latency;
+};
+
+// Predict with multi-thread.
+std::vector<std::vector<PaddleTensor>> ParallelPredict(
+    PaddlePredictor* predictor,
+    const std::vector<std::vector<PaddleTensor>>& inputs, size_t num_threads,
+    bool use_clone = true, ProfileInfo* profile_info = nullptr);
+
+void ParallelPredictProfiler(PaddlePredictor* predictor,
+                             const std::vector<PaddleTensor>& inputs,
+                             size_t num_threads, bool use_clone);
+
+}  // namespace contrib
 
 }  // namespace paddle

@@ -731,6 +731,13 @@ std::string AnalysisPredictor::GetSeriazlizedProgram() const {
 }
 
 template <>
+PaddlePredictorPtr CreatePaddlePredictor(const AnalysisConfig &config);
+
+PaddlePredictorPtr AnalysisPredictor::Copy() {
+  return CreatePaddlePredictor(config_);
+}
+
+template <>
 std::unique_ptr<PaddlePredictor> CreatePaddlePredictor<AnalysisConfig>(
     const AnalysisConfig &config) {
   return CreatePaddlePredictor<AnalysisConfig, PaddleEngineKind::kAnalysis>(

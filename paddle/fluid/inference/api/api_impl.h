@@ -43,7 +43,8 @@ class NativePaddlePredictor : public PaddlePredictor {
            std::vector<PaddleTensor> *output_data,
            int batch_size = -1) override;
 
-  std::unique_ptr<PaddlePredictor> Clone() override;
+  PaddlePredictorPtr Clone() override;
+  PaddlePredictorPtr Copy() override;
 
   ~NativePaddlePredictor() override;
 

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include "helper.h"
 #include "paddle/fluid/framework/commit.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/scope.h"
@@ -107,4 +108,50 @@ std::string get_version() {
   return ss.str();
 }
 
+std::vector<std::vector<PaddleTensor>> contrib::ParallelPredict(
+    PaddlePredictor *predictor,
+    const std::vector<std::vector<PaddleTensor>> &inputs, size_t num_threads,
+    bool use_clone, contrib::ProfileInfo *profile_info) {
+  std::vector<std::vector<PaddleTensor>> outputs(inputs.size());
+
+  inference::Timer timer;
+  PADDLE_ENFORCE_GT(inputs.size(), num_threads,
+                    "the dataset size should be larger than threads");
+  std::vector<std::thread> threads;
+  std::vector<PaddlePredictorPtr> predictors;
+
+  // Create predictors.
+  for (size_t tid = 0; tid < num_threads; ++tid) {
+    if (use_clone) {
+      predictors.emplace_back(predictor->Clone());
+    } else {
+      predictors.emplace_back(predictor->Copy());
+    }
+  }
+
+  const size_t num_rcds_per_thread = inputs.size() / num_threads;
+  PADDLE_ENFORCE_GT(num_rcds_per_thread, 0UL);
+
+  std::atomic<double> total{0.};
+  for (size_t tid = 0; tid < num_threads; ++tid) {
+    threads.emplace_back([&, tid] {
+      size_t begin = num_rcds_per_thread * tid;
+      size_t end = std::min(num_rcds_per_thread * (tid + 1), inputs.size());
+
+      auto &predictor = predictors[tid];
+
+      timer.tic();
+      for (size_t i = begin; i < end; i++) {
+        PADDLE_ENFORCE(predictor->Run(inputs.at(i), &(outputs[i])));
+      }
+      total = total.load() + timer.toc() / (end - begin);
+    });
+  }
+
+  if (profile_info) {
+    profile_info->average_latency = total / num_threads;
+    profile_info->num_threads = num_threads;
+  }
+  return outputs;
+}
 }  // namespace paddle

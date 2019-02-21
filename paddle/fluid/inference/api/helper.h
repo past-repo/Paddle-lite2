@@ -264,5 +264,5 @@ static bool IsFileExists(const std::string &path) {
   return exists;
 }
 
-}  // namespace inference
+}  // namespace iference
 }  // namespace paddle
