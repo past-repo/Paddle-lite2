@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/x86/target_wrapper.h"
+//
+// Created by chunwei on 19-2-22.
+//
+
+#include "context.h"

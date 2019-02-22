@@ -18,6 +18,8 @@
 #include <boost/variant.hpp>
 #include <map>
 #include <string>
+#include "paddle/fluid/framework/lite/context.h"
+#include "paddle/fluid/framework/lite/op_kernel.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"
@@ -33,17 +35,23 @@ using anys_t = std::map<std::string, any_t>;
  * The base class of an light-weight operators, currently just used in inference
  * to eliminate overhead of some operations in current framework.
  *
- * The OpLite are designed as follows:
+ * The Operator are designed as follows:
  * - it can has some members to hold the argument addresses,
  * - it should act just like a function call, no more logic should included.
- *
- * TODO(Superjomn) Integrate this to paddle/framework in the future.
- * TODO(Superjomn) This should be deleted if there are some equivalent
- *                 improvement in paddle/framework.
- * NOTE It just works on CPU, and the MKLDNN is not supported.
  */
 class OpLite {
  public:
+  enum class KernelStrategy {
+    // Return the user specified one.
+    kStatic = 0,
+    // Specify the expected kernel externally.
+    kSpecified,
+    // Run each kernel to evaluate and get the best kernel.
+    kRuntime,
+  };
+
+  OpLite(OpContext &&x) : op_context_(std::move(x)) {}
+
   virtual bool CheckShape() const { return true; }
   virtual bool InferShape() const { return true; }
   virtual bool Run() = 0;
@@ -51,9 +59,16 @@ class OpLite {
                      framework::Scope *scope) = 0;
   virtual std::string DebugString() const = 0;
 
-  virtual ~OpLite() = default;
+  virtual std::string StaticPickKernel(
+      const std::vector<OpTarget> &valid_targets) = 0;
 
-  // The operators can have members to contain some arguments.
+  static std::unique_ptr<any_kernel_t> PickBestKernel(
+      const std::string &op_type, const std::vector<OpPlace> &valid_places,
+      KernelStrategy kerlel_strategy = KernelStrategy::kStatic);
+
+ private:
+  virtual ~OpLite() = default;
+  OpContext op_context_;
 };
 
 #define CHECK_OR_FALSE(cond)               \

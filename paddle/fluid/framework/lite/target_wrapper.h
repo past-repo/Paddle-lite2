@@ -19,6 +19,15 @@ namespace paddle {
 namespace framework {
 namespace lite {
 
+enum class TargetType { kHost = 0, kX86, kCUDA, kARM };
+template <TargetType target>
+struct Target {};
+
+using Host = Target<TargetType::kHost>;
+using CUDA = Target<TargetType::kCUDA>;
+using X86 = Target<TargetType::kX86>;
+using ARM = Target<TargetType::ARM>;
+
 // Event sync for multi-stream devices like CUDA and OpenCL.
 template <typename Target>
 class Event {};
