@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/inference/op_lite/op_lite.h"
+#include "paddle/fluid/framework/lite/op_lite.h"

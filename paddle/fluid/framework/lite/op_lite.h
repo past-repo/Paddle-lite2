@@ -23,8 +23,8 @@
 #include "paddle/fluid/framework/variable.h"
 
 namespace paddle {
-namespace inference {
-namespace op_lite {
+namespace framework {
+namespace lite {
 
 using any_t = boost::variant<int, float, framework::Variable *>;
 using anys_t = std::map<std::string, any_t>;
@@ -82,6 +82,6 @@ class OpLite {
     return false;                                             \
   }
 
-}  // namespace op_lite
-}  // namespace inference
+}  // namespace lite
+}  // namespace framework
 }  // namespace paddle
