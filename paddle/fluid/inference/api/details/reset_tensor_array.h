@@ -45,8 +45,8 @@ struct TensorArrayBatchCleaner {
   void ResetTensorArray();
 
  private:
-  bool flag_{true};
-  bool no_tensor_flag_{true};
+  bool flag_{false};
+  bool no_tensor_flag_{false};
   std::vector<framework::LoDTensorArray *> arrays_;
 
   std::unordered_set<int> valid_types_;

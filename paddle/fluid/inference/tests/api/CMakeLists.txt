@@ -163,3 +163,5 @@ if(WITH_GPU AND TENSORRT_FOUND)
             EXTRA_DEPS ${INFERENCE_EXTRA_DEPS}
             ARGS --infer_model=${TRT_MODEL_INSTALL_DIR}/trt_test_models SERIAL)
 endif()
+
+inference_analysis_test(test1 SRCS test1.cc DEPS ${INFERENCE_EXTRA_DEPS})

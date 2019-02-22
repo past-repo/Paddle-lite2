@@ -41,6 +41,7 @@ template <typename T>
 class LookupTableKernel : public framework::OpKernel<T> {
  public:
   void Compute(const framework::ExecutionContext &context) const override {
+    LOG(INFO) << "with weight " << context.Inputs("W").front();
     auto *ids_t = context.Input<LoDTensor>("Ids");      // int tensor
     auto *output_t = context.Output<LoDTensor>("Out");  // float tensor
     auto *table_var = context.InputVar("W");
@@ -83,7 +84,7 @@ class LookupTableKernel : public framework::OpKernel<T> {
           if (padding_idx != kNoPadding && ids[i] == padding_idx) {
             memset(output + i * row_width, 0, row_width * sizeof(T));
           } else {
-            PADDLE_ENFORCE_LT(ids[i], row_number);
+            PADDLE_ENFORCE_LT(ids[i], row_number, "error %d id", i);
             PADDLE_ENFORCE_GE(ids[i], 0, "ids %d", i);
             memcpy(output + i * row_width, table + ids[i] * row_width,
                    row_width * sizeof(T));

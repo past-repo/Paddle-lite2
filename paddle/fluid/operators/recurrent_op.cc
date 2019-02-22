@@ -68,6 +68,11 @@ class StepScopes {
         scopes->emplace_back(&parent.NewScope());
       }
     }
+
+    LOG(INFO) << "scopes ";
+    for (auto *scope : *scopes) {
+      LOG(INFO) << "scope " << scope;
+    }
   }
 
   framework::Scope &CurScope() { return GetScope(counter_); }
@@ -161,6 +166,7 @@ class RecurrentBase : public framework::OperatorBase {
     PADDLE_ENFORCE_EQ(src_vars.size(), dst_vars.size());
     for (size_t i = 0; i < dst_vars.size(); ++i) {
       VLOG(10) << "Link " << src_vars[i] << " to " << dst_vars[i];
+      LOG(INFO) << "linking " << i << "-th input";
       AccessTensor(src_scope, src_vars[i], dst_scope, dst_vars[i], callback);
     }
   }
@@ -196,6 +202,10 @@ class RecurrentBase : public framework::OperatorBase {
                            framework::Scope *dst_scope,
                            const std::string &dst_var_name, Callback callback) {
     auto *src_var = src_scope.FindVar(src_var_name);
+    if (src_var_name == "static_rnn_0.tmp_1") {
+      LOG(INFO) << "to get " << src_var_name << " from scope " << &src_scope
+                << " " << src_var;
+    }
     PADDLE_ENFORCE(src_var != nullptr);
     auto &src_tensor = src_var->Get<framework::LoDTensor>();
 
@@ -231,6 +241,7 @@ class RecurrentOp : public RecurrentBase {
                const platform::Place &place) const override {
     auto seq_len = static_cast<size_t>(this->GetSequenceLength(scope));
     VLOG(3) << "Static RNN input sequence length = " << seq_len;
+    // TODO stupid here ?
     StepScopes scopes = CreateStepScopes(scope, seq_len);
     auto reverse = Attr<bool>(kReverse);
 
@@ -241,7 +252,7 @@ class RecurrentOp : public RecurrentBase {
 
     for (size_t i = 0; i < seq_len; ++i) {
       size_t seq_offset = reverse ? seq_len - i - 1 : i;
-      VLOG(3) << "Recurrent operate at the time step " << seq_offset;
+      LOG(INFO) << "Recurrent operate at the time step " << seq_offset;
 
       auto &cur_scope = scopes.CurScope();
 
@@ -257,17 +268,37 @@ class RecurrentOp : public RecurrentBase {
             inside->Resize(framework::make_ddim(dims));
           });
 
+      LOG(INFO) << "running step " << i;
+
       if (i == 0) {
+        LOG(INFO) << "Link tensor from parent " << &scope << " to "
+                  << &cur_scope;
+        auto *var = scope.FindVar("static_rnn_0.tmp_1");
+        LOG(INFO) << "< get the static_rnn_0@tmp_1 from pre " << &scope << " "
+                  << var;
+
         // Link initial states  --> ex_states
         LinkTensor(scope, Inputs(kInitialStates), &cur_scope,
                    Attr<std::vector<std::string>>(kExStates));
+        var = cur_scope.FindVar("static_rnn_0.tmp_1");
+        LOG(INFO) << "> get the static_rnn_0.tmp_1 from cur " << &cur_scope
+                  << " " << var;
       } else {
         auto &ex_scope = scopes.ExScope();
         // Link ex_scope::state --> cur_scope::ex_state
+        LOG(INFO) << "Link tensor in scopes " << &ex_scope << " to "
+                  << &cur_scope;
+        auto *var = ex_scope.FindVar("static_rnn_0.tmp_1");
+        LOG(INFO) << "< get the static_rnn_0.tmp_1 from pre " << &ex_scope
+                  << " " << var;
         LinkTensor(ex_scope, Attr<std::vector<std::string>>(kStates),
                    &cur_scope, Attr<std::vector<std::string>>(kExStates));
+        var = cur_scope.FindVar("static_rnn_0.tmp_1");
+        LOG(INFO) << "> get the static_rnn_0.tmp_1 from cur " << &cur_scope
+                  << " " << var;
       }
 
+      LOG(INFO) << "running executor on step " << i;
       // Every inputs are linked now, execute!
       executor.Run(*program, &cur_scope, block->ID(),
                    false /*create_local_scope*/);
