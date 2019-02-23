@@ -20,7 +20,6 @@
 #include <string>
 #include "paddle/fluid/framework/lite/context.h"
 #include "paddle/fluid/framework/lite/target_wrapper.h"
-#include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"
 
@@ -31,30 +30,19 @@ namespace lite {
 // Light-weight kernel implementation.
 // The OpKernel is designed to implement the specific algorithm on a target
 // device.
-template <typename Target, typename Param>
+template <TargetType Target, PrecisionType Precision>
 class OpKernel final {
  public:
-  using target_t = Target;
-  using param_t = Param;
   using context_t = Context<Target>;
-  using param_ptr_t = std::unique_ptr<param_t>;
   using context_ptr_t = std::unique_ptr<context_t>;
 
-  void SetParam(param_ptr_t &&param) { param_ = std::move(param); }
-  void SetContext(context_ptr_t &&ctx) { context = std::move(ctx); }
+  void SetContext(context_ptr_t &&ctx) { context_ = std::move(ctx); }
 
   void Run() { CHECK(false) << "Not Implemented"; }
 
  private:
-  param_ptr_t param_;
   context_ptr_t context_;
 };
-
-using any_kernel_t = boost::variant<OpKernel<Host>,  //
-                                    OpKernel<CUDA>,  //
-                                    OpKernel<X86>,   //
-                                    OpKernel<ARM>    //
-                                    >;
 
 }  // namespace lite
 }  // namespace framework

@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/x86/target_wrapper.h"
-#include <algorithm>
+#include "paddle/fluid/framework/lite/op_kernel.h"
 
 namespace paddle {
 namespace framework {
 namespace lite {
-
-template <>
-void TargetWrapper<X86>::MemcpySync(void* dst, void* src, size_t size,
-                                    IoDirection dir) {
-  std::copy_n(reinterpret_cast<uint8_t*>(src), size,
-              reinterpret_cast<uint8_t*>(dst));
-}
-
-template class TargetWrapper<X86>;
-
+namespace x86 {}  // namespace x86
 }  // namespace lite
 }  // namespace framework
 }  // namespace paddle

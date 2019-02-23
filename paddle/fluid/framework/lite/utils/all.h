@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/tensor_wrapper.h"
+#pragma once
+
+#include "paddle/fluid/framework/lite/utils/any.h"
+#include "paddle/fluid/framework/lite/utils/check.h"
+#include "paddle/fluid/framework/lite/utils/macros.h"

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
 #include <memory>
 #include "paddle/fluid/framework/lite/target_wrapper.h"
 
@@ -26,7 +27,7 @@ enum class OpTarget {
   kARM,
 };
 
-template <typename Target>
+template <TargetType Target>
 class Context {
  public:
   using target_wrapper_t = TargetWrapper<Target>;
@@ -54,25 +55,26 @@ class Context {
 
 class OpContext final {
  public:
-  template <typename Target>
-  using target_ptr_t = std::unique_ptr<Target>;
+  template <TargetType Target>
+  using target_ptr_t = std::unique_ptr<Context<Target>>;
 
   // @param target valid target.
-  OpContext(OpTarget target) : target_(std::vector<OpTarget>({target})) {}
+  explicit OpContext(OpTarget target)
+      : targets_(std::vector<OpTarget>({target})) {}
   // @param target valid target.
-  OpContext(const std::vector<OpTarget> &target) : target_(target) {}
+  explicit OpContext(const std::vector<OpTarget>& target) : targets_(target) {}
 
-  OpTarget target() const { return target_; }
+  const std::vector<OpTarget>& target() const { return targets_; }
 
-  template <typename Target>
+  template <TargetType Target>
   target_ptr_t<Target> CreateContext() {
     return target_ptr_t<Target>(new Context<Target>);
   }
 
  private:
-  std::vector<OpTarget> target_;
+  std::vector<OpTarget> targets_;
 };
 
-}  // lite
-}  // framework
-}  // paddle
+}  // namespace lite
+}  // namespace framework
+}  // namespace paddle

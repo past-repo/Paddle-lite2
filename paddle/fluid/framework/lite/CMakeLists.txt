@@ -1,2 +1,9 @@
+cc_library(executor_lite SRCS executor.cc)
 cc_library(op_lite SRCS op_lite.cc)
-cc_library(tensor_wrapper SRCS tensor_wrapper.cc)
+cc_library(tensor_lite SRCS tensor.cc)
+cc_library(memory_lite SRCS memory.cc)
+cc_library(op_registry_lite SRCS op_registry.cc)
+
+add_subdirectory(x86)
+add_subdirectory(cuda)
+add_subdirectory(operators)

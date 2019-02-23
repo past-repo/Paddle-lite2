@@ -19,31 +19,43 @@ namespace paddle {
 namespace framework {
 namespace lite {
 
-enum class TargetType { kHost = 0, kX86, kCUDA, kARM };
+enum class TargetType { kHost = 0, kX86, kCUDA, kARM, kLastAsPlaceHolder };
+#define TARGET(item__) TargetType::item__
+#define TARGET_VAL(item__) static_cast<int>(TARGET(item__))
+
+constexpr int kNumTargets = TARGET_VAL(kLastAsPlaceHolder) - TARGET_VAL(kHost);
+
 template <TargetType target>
 struct Target {};
 
 using Host = Target<TargetType::kHost>;
-using CUDA = Target<TargetType::kCUDA>;
 using X86 = Target<TargetType::kX86>;
-using ARM = Target<TargetType::ARM>;
+using CUDA = Target<TargetType::kCUDA>;
+using ARM = Target<TargetType::kARM>;
+
+enum class PrecisionType { kFloat = 0, kInt8, kLastAsPlaceHolder };
+
+#define PRECISION(item__) PrecisionType::item__
+#define PRECISION_VAL(item__) static_cast<int>(PRECISION(item__))
+constexpr int kNumPrecisions =
+    PRECISION_VAL(kLastAsPlaceHolder) - PRECISION_VAL(kFloat);
 
 // Event sync for multi-stream devices like CUDA and OpenCL.
-template <typename Target>
+template <TargetType Target>
 class Event {};
 
 // Memory copy directions.
-enum class Direction {
+enum class IoDirection {
   HtoH = 0,
   HtoD,
   DtoH,
 };
 
 // This interface should be specified by each kind of target.
-template <typename Target>
+template <TargetType Target>
 class TargetWrapper {
  public:
-  using stream_t = typename Target::stream_t;
+  using stream_t = int;
   using event_t = Event<Target>;
 
   static size_t num_devices() { return 0; }
@@ -63,9 +75,11 @@ class TargetWrapper {
   static void* Malloc(size_t size) { return nullptr; }
   static void Free(void* ptr) {}
 
-  static void MemcpySync(void* dst, void* src, size_t size, Direction dir) {}
+  static void MemcpySync(void* dst, void* src, size_t size, IoDirection dir) {}
   static void MemcpyAsync(void* dst, void* src, size_t size,
-                          const stream_t& stream, Direction dir) {}
+                          const stream_t& stream, IoDirection dir) {
+    MemcpySync(dst, src, size, dir);
+  }
 };
 
 }  // namespace lite

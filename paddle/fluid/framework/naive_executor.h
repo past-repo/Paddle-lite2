@@ -16,10 +16,10 @@
 
 #include <string>
 #include <vector>
+#include "paddle/fluid/framework/op_lite.h"
 #include "paddle/fluid/framework/operator.h"
 #include "paddle/fluid/framework/program_desc.h"
 #include "paddle/fluid/framework/scope.h"
-#include "paddle/fluid/inference/op_lite/op_lite.h"
 #include "paddle/fluid/platform/device_context.h"
 
 DECLARE_bool(global_with_gpu);

@@ -94,4 +94,4 @@ if(WITH_TESTING)
 endif()
 
 
-add_subdirectory(op_lite)
+#add_subdirectory(op_lite)

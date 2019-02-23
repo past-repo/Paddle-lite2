@@ -18,41 +18,7 @@
 namespace paddle {
 namespace framework {
 namespace lite {
-namespace x86 {
-
-template <typename Target>
-class TargetWrapper {
- public:
-  using stream_t = typename Target::stream_t;
-  using event_t = Event<Target>;
-
-  static size_t num_devices() { return 0; }
-  static size_t maximum_stream() { return 0; }
-
-  static void CreateStream(stream_t* stream) {}
-  static void DestroyStream(const stream_t& stream) {}
-
-  static void CreateEvent(event_t* event) {}
-  static void DestroyEvent(const event_t& event) {}
-
-  static void RecordEvent(const event_t& event) {}
-  static void SyncEvent(const event_t& event) {}
-
-  static void StreamSync(const stream_t& stream) {}
-
-  static void* Malloc(size_t size) { return new uint8_t[size]; }
-  static void Free(void* ptr) { delete[] static_cast<uint8_t*>(ptr); }
-
-  static void MemcpySync(void* dst, void* src, size_t size, Direction dir) {
-    std::copy(static_cast<uint8_t*>(src), static_cast<uint8_t*>(src) + size,
-              static_cast<uint8_t*>(dst));
-  }
-  static void MemcpyAsync(void* dst, void* src, size_t size,
-                          const stream_t& stream, Direction dir) {
-    MemcpySync(dst, src, size, dir);
-  }
-};
-}  // namespace x86
+namespace x86 {}  // namespace x86
 }  // namespace framework
 }  // namespace framework
 }  // namespace paddle

@@ -50,7 +50,8 @@ class OpLite {
     kRuntime,
   };
 
-  OpLite(OpContext &&x) : op_context_(std::move(x)) {}
+  OpLite() {}
+  OpLite(std::unique_ptr<OpContext> &&x) : op_context_(std::move(x)) {}
 
   virtual bool CheckShape() const { return true; }
   virtual bool InferShape() const { return true; }
@@ -59,43 +60,19 @@ class OpLite {
                      framework::Scope *scope) = 0;
   virtual std::string DebugString() const = 0;
 
-  virtual std::string StaticPickKernel(
-      const std::vector<OpTarget> &valid_targets) = 0;
+  virtual void StaticPickKernel(const std::vector<OpTarget> &valid_targets) = 0;
 
-  static std::unique_ptr<any_kernel_t> PickBestKernel(
-      const std::string &op_type, const std::vector<OpPlace> &valid_places,
-      KernelStrategy kerlel_strategy = KernelStrategy::kStatic);
+  void PickBestKernel(const std::vector<OpTarget> &valid_places,
+                      KernelStrategy kernel_strategy = KernelStrategy::kStatic);
 
- private:
+  // Create all the kernels for the valid targets.
+  void CreateKernels();
+
   virtual ~OpLite() = default;
-  OpContext op_context_;
+
+ protected:
+  std::unique_ptr<OpContext> op_context_;
 };
-
-#define CHECK_OR_FALSE(cond)               \
-  if (!(cond)) {                           \
-    LOG(ERROR) << #cond << " test error!"; \
-    return false;                          \
-  }
-#define CHECK_EQ_OR_FALSE(a__, b__)                           \
-  if ((a__) != (b__)) {                                       \
-    LOG(ERROR) << #a__ << " == " << #b__ << " check failed!"; \
-    LOG(ERROR) << a__ << " != " << b__;                       \
-    return false;                                             \
-  }
-
-#define CHECK_GT_OR_FALSE(a__, b__)                          \
-  if (!((a__) > (b__))) {                                    \
-    LOG(ERROR) << #a__ << " > " << #b__ << " check failed!"; \
-    LOG(ERROR) << a__ << " <= " << b__;                      \
-    return false;                                            \
-  }
-
-#define CHECK_GE_OR_FALSE(a__, b__)                           \
-  if (!((a__) >= (b__))) {                                    \
-    LOG(ERROR) << #a__ << " >= " << #b__ << " check failed!"; \
-    LOG(ERROR) << a__ << " < " << b__;                        \
-    return false;                                             \
-  }
 
 }  // namespace lite
 }  // namespace framework
