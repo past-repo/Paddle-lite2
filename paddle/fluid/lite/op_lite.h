@@ -25,7 +25,6 @@
 #include "paddle/fluid/framework/variable.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 using any_t = boost::variant<int, float, framework::Variable *>;
@@ -75,5 +74,4 @@ class OpLite {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

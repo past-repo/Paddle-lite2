@@ -19,13 +19,12 @@
 #include <map>
 #include <string>
 #include "context.h"
-#include "target_wrapper.h"
-#include "paddle/fluid/lite/utils/all.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"
+#include "paddle/fluid/lite/utils/all.h"
+#include "target_wrapper.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 // Light-weight kernel implementation.
@@ -56,5 +55,4 @@ class OpKernel {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

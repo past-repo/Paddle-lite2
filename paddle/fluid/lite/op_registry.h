@@ -16,11 +16,10 @@
 #include <string>
 #include <unordered_map>
 #include "op_lite.h"
-#include "target_wrapper.h"
 #include "paddle/fluid/lite/utils/all.h"
+#include "target_wrapper.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 using KernelFunc = std::function<void()>;
@@ -109,7 +108,6 @@ class KernelRegistry final {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle
 
 #define LITE_OP_REGISTER(op_type__) op_type__##__registry__

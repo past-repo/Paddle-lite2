@@ -19,7 +19,6 @@
 #include "paddle/fluid/lite/utils/all.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 namespace operators {
 
@@ -101,5 +100,4 @@ class FcOpLite : public OpLite {
 
 }  // namespace operators
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

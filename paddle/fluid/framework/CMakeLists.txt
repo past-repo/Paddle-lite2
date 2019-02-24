@@ -231,4 +231,3 @@ message(STATUS "commit: ${PADDLE_COMMIT}")
 message(STATUS "branch: ${PADDLE_BRANCH}")
 
 configure_file(commit.h.in commit.h)
-

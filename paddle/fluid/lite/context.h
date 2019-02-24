@@ -17,7 +17,6 @@
 #include "target_wrapper.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 enum class OpTarget {
@@ -76,5 +75,4 @@ class OpContext final {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

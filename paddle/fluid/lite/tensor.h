@@ -18,7 +18,6 @@
 #include "memory.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 template <TargetType Target>
@@ -82,5 +81,4 @@ class Tensor {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

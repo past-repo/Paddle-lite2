@@ -23,7 +23,6 @@
 // These code references https://gist.github.com/shoooe/9202235
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 class any;
@@ -127,5 +126,4 @@ const Type* any_cast(const any* ptr) {
 }
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

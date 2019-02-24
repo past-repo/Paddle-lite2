@@ -16,7 +16,6 @@
 #include <iostream>
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 enum class TargetType { kHost = 0, kX86, kCUDA, kARM, kLastAsPlaceHolder };
@@ -85,5 +84,4 @@ class TargetWrapper {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

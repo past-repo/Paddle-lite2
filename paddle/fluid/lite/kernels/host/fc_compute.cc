@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "fc_compute.h"
+#include "paddle/fluid/lite/kernels/host/fc_compute.h"
 #include <Eigen/Core>
+#include "paddle/fluid/lite/op_registry.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 // NOTE should use pure std C++ implementation.
@@ -46,5 +46,4 @@ void FcCompute::Run() {
 }
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

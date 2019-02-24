@@ -17,7 +17,6 @@
 #include "target_wrapper.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 void* TargetMalloc(TargetType target, size_t size) {
@@ -92,5 +91,4 @@ class Buffer {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle

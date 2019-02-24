@@ -17,7 +17,6 @@
 #include "paddle/fluid/lite/operators/fc_op.h"
 
 namespace paddle {
-namespace framework {
 namespace lite {
 
 class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
@@ -30,5 +29,4 @@ class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
 };
 
 }  // namespace lite
-}  // namespace framework
 }  // namespace paddle
