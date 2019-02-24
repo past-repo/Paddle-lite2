@@ -18,9 +18,9 @@
 #include <boost/variant.hpp>
 #include <map>
 #include <string>
-#include "paddle/fluid/framework/lite/context.h"
-#include "paddle/fluid/framework/lite/target_wrapper.h"
-#include "paddle/fluid/framework/lite/utils/all.h"
+#include "context.h"
+#include "target_wrapper.h"
+#include "paddle/fluid/lite/utils/all.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"
 

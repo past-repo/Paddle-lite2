@@ -12,4 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/op_lite.h"
+#include "paddle/fluid/lite/op_kernel.h"
+
+namespace paddle {
+namespace framework {
+namespace lite {
+namespace x86 {}  // namespace x86
+}  // namespace lite
+}  // namespace framework
+}  // namespace paddle

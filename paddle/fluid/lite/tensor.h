@@ -15,7 +15,7 @@
 #pragma once
 #include <algorithm>
 #include <vector>
-#include "paddle/fluid/framework/lite/memory.h"
+#include "memory.h"
 
 namespace paddle {
 namespace framework {

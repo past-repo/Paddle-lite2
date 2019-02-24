@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/memory.h"
+#include "fc_op.h"
+#include "paddle/fluid/lite/op_registry.h"
 
-namespace paddle {
-namespace framework {
-namespace lite {}  // namespace lite
-}  // namespace framework
-}  // namespace paddle
+REGISTER_LITE_OP(fc, paddle::framework::lite::operators::FcOpLite);

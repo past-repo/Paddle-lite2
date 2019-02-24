@@ -14,6 +14,6 @@
 
 #pragma once
 
-#include "paddle/fluid/framework/lite/utils/any.h"
-#include "paddle/fluid/framework/lite/utils/check.h"
-#include "paddle/fluid/framework/lite/utils/macros.h"
+#include "any.h"
+#include "check.h"
+#include "macros.h"

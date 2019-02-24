@@ -18,8 +18,8 @@
 #include <boost/variant.hpp>
 #include <map>
 #include <string>
-#include "paddle/fluid/framework/lite/context.h"
-#include "paddle/fluid/framework/lite/op_kernel.h"
+#include "context.h"
+#include "op_kernel.h"
 #include "paddle/fluid/framework/lod_tensor.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"

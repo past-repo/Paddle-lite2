@@ -15,9 +15,9 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "paddle/fluid/framework/lite/op_lite.h"
-#include "paddle/fluid/framework/lite/target_wrapper.h"
-#include "paddle/fluid/framework/lite/utils/all.h"
+#include "op_lite.h"
+#include "target_wrapper.h"
+#include "paddle/fluid/lite/utils/all.h"
 
 namespace paddle {
 namespace framework {

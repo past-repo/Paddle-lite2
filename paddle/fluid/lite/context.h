@@ -14,7 +14,7 @@
 
 #pragma once
 #include <memory>
-#include "paddle/fluid/framework/lite/target_wrapper.h"
+#include "target_wrapper.h"
 
 namespace paddle {
 namespace framework {

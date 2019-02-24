@@ -12,7 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "paddle/fluid/framework/lite/operators/fc_op.h"
-#include "paddle/fluid/framework/lite/op_registry.h"
+#pragma once
+#include "paddle/fluid/lite/op_kernel.h"
+#include "paddle/fluid/lite/operators/fc_op.h"
 
-REGISTER_LITE_OP(fc, paddle::framework::lite::operators::FcOpLite);
+namespace paddle {
+namespace framework {
+namespace lite {
+
+class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::FcParam;
+
+  void Run() override;
+
+  virtual ~FcCompute() = default;
+};
+
+}  // namespace lite
+}  // namespace framework
+}  // namespace paddle

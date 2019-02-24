@@ -13,22 +13,12 @@
 // limitations under the License.
 
 #pragma once
-#include "paddle/fluid/framework/lite/op_kernel.h"
-#include "paddle/fluid/framework/lite/operators/fc_op.h"
+#include "paddle/fluid/lite/target_wrapper.h"
 
 namespace paddle {
 namespace framework {
 namespace lite {
-
-class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
- public:
-  using param_t = operators::FcParam;
-
-  void Run() override;
-
-  virtual ~FcCompute() = default;
-};
-
-}  // namespace lite
+namespace x86 {}  // namespace x86
+}  // namespace framework
 }  // namespace framework
 }  // namespace paddle
