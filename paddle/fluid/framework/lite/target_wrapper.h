@@ -25,6 +25,7 @@ enum class TargetType { kHost = 0, kX86, kCUDA, kARM, kLastAsPlaceHolder };
 
 constexpr int kNumTargets = TARGET_VAL(kLastAsPlaceHolder) - TARGET_VAL(kHost);
 
+/*
 template <TargetType target>
 struct Target {};
 
@@ -32,6 +33,7 @@ using Host = Target<TargetType::kHost>;
 using X86 = Target<TargetType::kX86>;
 using CUDA = Target<TargetType::kCUDA>;
 using ARM = Target<TargetType::kARM>;
+ */
 
 enum class PrecisionType { kFloat = 0, kInt8, kLastAsPlaceHolder };
 

@@ -20,6 +20,7 @@
 #include <string>
 #include "paddle/fluid/framework/lite/context.h"
 #include "paddle/fluid/framework/lite/target_wrapper.h"
+#include "paddle/fluid/framework/lite/utils/all.h"
 #include "paddle/fluid/framework/op_desc.h"
 #include "paddle/fluid/framework/variable.h"
 
@@ -31,17 +32,27 @@ namespace lite {
 // The OpKernel is designed to implement the specific algorithm on a target
 // device.
 template <TargetType Target, PrecisionType Precision>
-class OpKernel final {
+class OpKernel {
  public:
   using context_t = Context<Target>;
   using context_ptr_t = std::unique_ptr<context_t>;
 
-  void SetContext(context_ptr_t &&ctx) { context_ = std::move(ctx); }
+  void SetContext(context_ptr_t&& ctx) { context_ = std::move(ctx); }
 
-  void Run() { CHECK(false) << "Not Implemented"; }
+  void SetParam(any param) { param_ = param; }
 
- private:
+  template <typename Param>
+  Param& param() const {
+    return *any_cast<Param>(&param_);
+  }
+
+  virtual void Run() { CHECK(false) << "Not Implemented"; }
+
+  virtual ~OpKernel() = default;
+
+ protected:
   context_ptr_t context_;
+  mutable any param_;
 };
 
 }  // namespace lite

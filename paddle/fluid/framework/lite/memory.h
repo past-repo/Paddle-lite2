@@ -62,7 +62,7 @@ class Buffer {
  public:
   Buffer(TargetType target, size_t size) : space_(size), target_(target) {}
 
-  const void* data() const { return data_; }
+  void* data() const { return data_; }
 
   void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {

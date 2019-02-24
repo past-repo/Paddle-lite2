@@ -28,6 +28,8 @@ struct FcParam {
   Tensor* w{nullptr};
   Tensor* bias{nullptr};
   Tensor* output{nullptr};
+  // the input matrix dimentions.
+  lite::DDim in_mat_dims;
   int in_num_col_dims{0};
 };
 
@@ -58,8 +60,9 @@ class FcOpLite : public OpLite {
     CHECK_GT_OR_FALSE(input_dims.size(),
                       static_cast<size_t>(param_.in_num_col_dims));
 
-    auto in_mat_dims = lite::flatten_to_2d(input_dims, param_.in_num_col_dims);
-    CHECK_EQ_OR_FALSE(in_mat_dims[1], w_dims[0]);
+    param_.in_mat_dims =
+        lite::flatten_to_2d(input_dims, param_.in_num_col_dims);
+    CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
 
     return true;
   }
@@ -88,12 +91,12 @@ class FcOpLite : public OpLite {
     return false;
   }
 
-  std::string DebugString() const override { return std::__cxx11::string(); }
+  std::string DebugString() const override { return "fc"; }
 
   void StaticPickKernel(const std::vector<OpTarget>& valid_targets) override {}
 
  private:
-  FcParam param_;
+  mutable FcParam param_;
 };
 
 }  // namespace operators

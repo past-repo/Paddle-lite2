@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
 #include <algorithm>
+#include <vector>
 #include "paddle/fluid/framework/lite/memory.h"
 
 namespace paddle {
@@ -41,14 +43,14 @@ DDim SliceDims(const DDim& dims, int begin, int end) {
   return DDim(dims.begin() + begin, dims.begin() + end - 1);
 }
 
-int numel(const DDim& dims) {
+int product(const DDim& dims) {
   return std::accumulate(dims.begin(), dims.end(), 1,
                          [](int a, int b) { return a * b; });
 }
 
 DDim flatten_to_2d(const DDim& dims, int col) {
-  return DDim({numel(SliceDims(dims, 0, col)),
-               numel(SliceDims(dims, col, dims.size()))});
+  return DDim({product(SliceDims(dims, 0, col)),
+               product(SliceDims(dims, col, dims.size()))});
 }
 
 // A light-weight tensor implementation.
@@ -58,7 +60,7 @@ class Tensor {
 
   template <typename T>
   const T* data() const {
-    return buffer_.data();
+    return static_cast<const T*>(buffer_.data());
   }
 
   void Resize(const DDim& ddim) { dims_ = ddim; }
@@ -67,8 +69,8 @@ class Tensor {
 
   template <typename T>
   T* mutable_data() {
-    buffer_.ResetLazy(target_, numel(dims_));
-    return buffer_.data();
+    buffer_.ResetLazy(target_, product(dims_));
+    return static_cast<T*>(buffer_.data());
   }
 
   bool IsInitialized() const { return buffer_.data(); }
