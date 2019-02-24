@@ -18,6 +18,8 @@
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace host {
 
 // NOTE should use pure std C++ implementation.
 void FcCompute::Run() {
@@ -45,5 +47,9 @@ void FcCompute::Run() {
   }
 }
 
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(fc, kHost, kFloat, paddle::lite::kernels::host::FcCompute);

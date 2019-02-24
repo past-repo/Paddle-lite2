@@ -19,7 +19,7 @@ namespace paddle {
 namespace lite {
 
 enum class TargetType { kHost = 0, kX86, kCUDA, kARM, kLastAsPlaceHolder };
-#define TARGET(item__) TargetType::item__
+#define TARGET(item__) paddle::lite::TargetType::item__
 #define TARGET_VAL(item__) static_cast<int>(TARGET(item__))
 
 constexpr int kNumTargets = TARGET_VAL(kLastAsPlaceHolder) - TARGET_VAL(kHost);
@@ -36,7 +36,7 @@ using ARM = Target<TargetType::kARM>;
 
 enum class PrecisionType { kFloat = 0, kInt8, kLastAsPlaceHolder };
 
-#define PRECISION(item__) PrecisionType::item__
+#define PRECISION(item__) paddle::lite::PrecisionType::item__
 #define PRECISION_VAL(item__) static_cast<int>(PRECISION(item__))
 constexpr int kNumPrecisions =
     PRECISION_VAL(kLastAsPlaceHolder) - PRECISION_VAL(kFloat);

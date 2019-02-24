@@ -15,9 +15,10 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "op_lite.h"
+#include "paddle/fluid/lite/op_kernel.h"
+#include "paddle/fluid/lite/op_lite.h"
+#include "paddle/fluid/lite/target_wrapper.h"
 #include "paddle/fluid/lite/utils/all.h"
-#include "target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -112,31 +113,34 @@ class KernelRegistry final {
 
 #define LITE_OP_REGISTER(op_type__) op_type__##__registry__
 #define LITE_OP_REGISTER_INSTANCE(op_type__) op_type__##__registry__instance__
-#define REGISTER_LITE_OP(op_type__, OpClass)                         \
-  struct LITE_OP_REGISTER(op_type__) {                               \
-    LITE_OP_REGISTER(op_type__)() {                                  \
-      paddle::framework::lite::LiteOpRegistry::Global().Register(    \
-          #op_type__,                                                \
-          []() -> std::unique_ptr<paddle::framework::lite::OpLite> { \
-            return std::unique_ptr<paddle::framework::lite::OpLite>( \
-                new OpClass);                                        \
-          });                                                        \
-    }                                                                \
-  };                                                                 \
+#define REGISTER_LITE_OP(op_type__, OpClass)                           \
+  struct LITE_OP_REGISTER(op_type__) {                                 \
+    LITE_OP_REGISTER(op_type__)() {                                    \
+      paddle::lite::LiteOpRegistry::Global().Register(                 \
+          #op_type__, []() -> std::unique_ptr<paddle::lite::OpLite> {  \
+            return std::unique_ptr<paddle::lite::OpLite>(new OpClass); \
+          });                                                          \
+    }                                                                  \
+  };                                                                   \
   static LITE_OP_REGISTER(op_type__) LITE_OP_REGISTER_INSTANCE(op_type__);
 
-#define KERNEL_REGISTER(op_type__, type__, precision__) \
-  op_type__##type__##precision__##__registor__
-#define KERNEL_REGISTER_INSTANCE(op_type__, type__, precision__) \
-  op_type__##type__##precision__##__registor__instance__
+#define KERNEL_REGISTER(op_type__, target__, precision__) \
+  op_type__##target__##precision__##__registor__
+#define KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__) \
+  op_type__##target__##precision__##__registor__instance__
 
 #define REGISTER_LITE_KERNEL(op_type__, target__, precision__, KernelClass) \
-  struct KERNEL_REGISTER(op_type__, target__, precision_) {                 \
-    KERNEL_REGISTER(op_type__, target__, precision_)() {                    \
-      paddle::framework::lite::KernelRegistry::Global()                     \
+  struct KERNEL_REGISTER(op_type__, target__, precision__) {                \
+    KERNEL_REGISTER(op_type__, target__, precision__)() {                   \
+      paddle::lite::KernelRegistry::Global()                                \
           .Register<TARGET(target__), PRECISION(precision__)>(              \
-              [] { return new KernelClass<target__, precision__>; });       \
+              #op_type__, []() -> std::unique_ptr<paddle::lite::OpKernel<   \
+                              TARGET(target__), PRECISION(precision__)>> {  \
+                return std::unique_ptr<paddle::lite::OpKernel<              \
+                    TARGET(target__), PRECISION(precision__)>>(             \
+                    new KernelClass);                                       \
+              });                                                           \
     }                                                                       \
   };                                                                        \
-  static KERNEL_REGISTER(op_type__, type__, precision__)                    \
-      KERNEL_REGISTER_INSTANCE(op_type__, type__, precision__);
+  static KERNEL_REGISTER(op_type__, target__, precision__)                  \
+      KERNEL_REGISTER_INSTANCE(op_type__, target__, precision__);

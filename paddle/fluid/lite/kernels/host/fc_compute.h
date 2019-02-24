@@ -18,6 +18,8 @@
 
 namespace paddle {
 namespace lite {
+namespace kernels {
+namespace host {
 
 class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
  public:
@@ -28,5 +30,7 @@ class FcCompute final : public OpKernel<TARGET(kHost), PRECISION(kFloat)> {
   virtual ~FcCompute() = default;
 };
 
+}  // namespace host
+}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

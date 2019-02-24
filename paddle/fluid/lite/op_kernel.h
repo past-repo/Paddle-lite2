@@ -18,11 +18,10 @@
 #include <boost/variant.hpp>
 #include <map>
 #include <string>
-#include "context.h"
 #include "paddle/fluid/framework/op_desc.h"
-#include "paddle/fluid/framework/variable.h"
+#include "paddle/fluid/lite/context.h"
+#include "paddle/fluid/lite/target_wrapper.h"
 #include "paddle/fluid/lite/utils/all.h"
-#include "target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -35,6 +34,8 @@ class OpKernel {
  public:
   using context_t = Context<Target>;
   using context_ptr_t = std::unique_ptr<context_t>;
+
+  OpKernel() = default;
 
   void SetContext(context_ptr_t&& ctx) { context_ = std::move(ctx); }
 

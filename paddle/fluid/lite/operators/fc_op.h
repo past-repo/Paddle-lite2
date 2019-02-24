@@ -36,52 +36,9 @@ class FcOpLite : public OpLite {
  public:
   FcOpLite() {}
 
-  bool CheckShape() const override {
-    CHECK_OR_FALSE(param_.input);
-    CHECK_OR_FALSE(param_.output);
-    CHECK_OR_FALSE(param_.w);
-    // bias is optional.
+  bool CheckShape() const override;
 
-    const auto input_dims = param_.input->dims();
-    const auto w_dims = param_.w->dims();
-
-    if (param_.bias) {
-      const auto bias_dims = param_.bias->dims();
-      if (bias_dims.size() == 2) {
-        CHECK_EQ_OR_FALSE(bias_dims[0], 1);
-        CHECK_EQ_OR_FALSE(bias_dims[1], w_dims[1]);
-      } else if (bias_dims.size() == 1) {
-        CHECK_EQ_OR_FALSE(bias_dims[0], w_dims[1]);
-      }
-    }
-
-    CHECK_EQ_OR_FALSE(w_dims.size(), 2UL);
-    CHECK_GT_OR_FALSE(input_dims.size(),
-                      static_cast<size_t>(param_.in_num_col_dims));
-
-    param_.in_mat_dims =
-        lite::flatten_to_2d(input_dims, param_.in_num_col_dims);
-    CHECK_EQ_OR_FALSE(param_.in_mat_dims[1], w_dims[0]);
-
-    return true;
-  }
-
-  bool InferShape() const override {
-    const auto input_dims = param_.input->dims();
-    const auto w_dims = param_.w->dims();
-
-    // Set output dims
-    std::vector<int> output_dims(param_.in_num_col_dims + 1, 0);
-    for (int i = 0; i < param_.in_num_col_dims; ++i) {
-      output_dims[i] = input_dims[i];
-    }
-    output_dims.back() = w_dims[1];
-    param_.output->Resize(output_dims);
-
-    // share LoD
-    // param_.output->set_lod(param_.input->lod());
-    return true;
-  }
+  bool InferShape() const override;
 
   bool Run() override { return false; }
 
