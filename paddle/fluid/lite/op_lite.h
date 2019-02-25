@@ -30,6 +30,11 @@ namespace lite {
 using any_t = boost::variant<int, float, framework::Variable *>;
 using anys_t = std::map<std::string, any_t>;
 
+// For registry factory.
+struct Registry {
+  void Touch() {}
+};
+
 /**
  * The base class of an light-weight operators, currently just used in inference
  * to eliminate overhead of some operations in current framework.
@@ -38,7 +43,7 @@ using anys_t = std::map<std::string, any_t>;
  * - it can has some members to hold the argument addresses,
  * - it should act just like a function call, no more logic should included.
  */
-class OpLite {
+class OpLite : public Registry {
  public:
   enum class KernelStrategy {
     // Return the user specified one.

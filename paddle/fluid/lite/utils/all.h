@@ -15,5 +15,6 @@
 #pragma once
 
 #include "any.h"
+#include "factory.h"
 #include "check.h"
 #include "macros.h"
