@@ -14,3 +14,5 @@ if (WITH_GPU AND TENSORRT_FOUND)
   file(APPEND ${pass_file} "USE_PASS(tensorrt_subgraph_pass);\n")
   set(INFER_IR_PASSES ${INFER_IR_PASSES} tensorrt_subgraph_pass CACHE INTERNAL "")
 endif()
+
+cc_library(anakin_subgraph_pass SRCS anakin_subgraph_pass.cc DEPS subgraph_detector)

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include <paddle/fluid/framework/ir/fuse_pass_base.h>
+#include "paddle/fluid/framework/ir/fuse_pass_base.h"
 #include "paddle/fluid/framework/ir/pass.h"
 
 namespace paddle {
