@@ -209,7 +209,8 @@ class RecurrentBase : public framework::OperatorBase {
     if (is_backward && src_var == nullptr) {
       return;
     }
-    PADDLE_ENFORCE(src_var != nullptr, "%s is not found from src scope.", src_var_name);
+    PADDLE_ENFORCE(src_var != nullptr, "%s is not found from src scope.",
+                   src_var_name);
     LOG(INFO) << "geting " << src_var_name;
     auto &src_tensor = src_var->Get<framework::LoDTensor>();
 
@@ -313,13 +314,15 @@ class RecurrentOp : public RecurrentBase {
                   << var;
 
         // Link initial states  --> ex_states
-        LOG(INFO) << "link initial state from " << Input(kInitialStates) << " to " << Attr<std::vector<std::string>>(kExStates).front();
+        LOG(INFO) << "link initial state from " << Input(kInitialStates)
+                  << " to "
+                  << Attr<std::vector<std::string>>(kExStates).front();
         LinkTensor(scope, Inputs(kInitialStates), &cur_scope,
                    Attr<std::vector<std::string>>(kExStates));
         var = cur_scope.FindVar("static_rnn_0.tmp_1");
         LOG(INFO) << "> get the static_rnn_0.tmp_1 from cur " << &cur_scope
                   << " " << var;
-        //LOG(INFO) << framework::GenScopeTreeDebugInfo(&cur_scope);
+        // LOG(INFO) << framework::GenScopeTreeDebugInfo(&cur_scope);
       } else {
         auto &ex_scope = scopes.ExScope();
         // Link ex_scope::state --> cur_scope::ex_state
@@ -328,9 +331,23 @@ class RecurrentOp : public RecurrentBase {
         auto *var = ex_scope.FindVar("static_rnn_0.tmp_1");
         LOG(INFO) << "< get the static_rnn_0.tmp_1 from pre " << &ex_scope
                   << " " << var;
-        LOG(INFO) << "link pre state from " << Attr<std::vector<std::string>>(kStates).front() << " to " << Attr<std::vector<std::string>>(kExStates).front();
-        LinkTensor(ex_scope, Attr<std::vector<std::string>>(kStates),
-                   &cur_scope, Attr<std::vector<std::string>>(kExStates));
+        LOG(INFO) << "link pre state from "
+                  << Attr<std::vector<std::string>>(kStates).front() << " to "
+                  << Attr<std::vector<std::string>>(kExStates).front();
+        const auto states = Attr<std::vector<std::string>>(kStates);
+        const auto ex_states = Attr<std::vector<std::string>>(kExStates);
+        PADDLE_ENFORCE_EQ(states.size(), ex_states.size());
+
+        for (int i = 0; i < states.size(); i++) {
+          if (!ex_scope.FindVar(states[i])) {
+            LinkTensor(ex_scope, {ex_states[i]}, &cur_scope, {ex_states[i]});
+          } else {
+            LinkTensor(ex_scope, {states[i]}, &cur_scope, {ex_states[i]});
+          }
+        }
+
+        //LinkTensor(ex_scope, Attr<std::vector<std::string>>(kStates),
+                   //&cur_scope, Attr<std::vector<std::string>>(kExStates));
         var = cur_scope.FindVar("static_rnn_0.tmp_1");
         LOG(INFO) << "> get the static_rnn_0.tmp_1 from cur " << &cur_scope
                   << " " << var;

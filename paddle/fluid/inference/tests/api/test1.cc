@@ -195,6 +195,8 @@ TEST(test, test) {
   LOG(INFO) << "model: " << FLAGS_model;
   AnalysisConfig config(FLAGS_model);
   config.SwitchIrDebug();
+  config.pass_builder()->DeletePass("identity_scale_op_clean_pass");
+
 
   auto predictor = CreatePaddlePredictor(config);
 
