@@ -162,12 +162,13 @@ class RecurrentBase : public framework::OperatorBase {
                                      const std::vector<std::string> &src_vars,
                                      framework::Scope *dst_scope,
                                      const std::vector<std::string> &dst_vars,
-                                     Callback callback) {
+                                     Callback callback,
+                                     bool is_backward = false) {
     PADDLE_ENFORCE_EQ(src_vars.size(), dst_vars.size());
     for (size_t i = 0; i < dst_vars.size(); ++i) {
       VLOG(10) << "Link " << src_vars[i] << " to " << dst_vars[i];
-      LOG(INFO) << "linking " << i << "-th input";
-      AccessTensor(src_scope, src_vars[i], dst_scope, dst_vars[i], callback);
+      AccessTensor(src_scope, src_vars[i], dst_scope, dst_vars[i], callback,
+                   is_backward);
     }
   }
 
@@ -179,11 +180,13 @@ class RecurrentBase : public framework::OperatorBase {
                                      const std::vector<std::string> &src_vars,
                                      const framework::Scope &dst_scope,
                                      const std::vector<std::string> &dst_vars,
-                                     Callback callback) {
+                                     Callback callback,
+                                     bool is_backward = false) {
     PADDLE_ENFORCE_EQ(src_vars.size(), dst_vars.size());
     for (size_t i = 0; i < dst_vars.size(); ++i) {
       VLOG(10) << "Link " << src_vars[i] << " to " << dst_vars[i];
-      AccessTensor(src_scope, src_vars[i], dst_scope, dst_vars[i], callback);
+      AccessTensor(src_scope, src_vars[i], dst_scope, dst_vars[i], callback,
+                   is_backward);
     }
   }
 
@@ -200,13 +203,14 @@ class RecurrentBase : public framework::OperatorBase {
   static void AccessTensor(const framework::Scope &src_scope,
                            const std::string &src_var_name,
                            framework::Scope *dst_scope,
-                           const std::string &dst_var_name, Callback callback) {
+                           const std::string &dst_var_name, Callback callback,
+                           bool is_backward = false) {
     auto *src_var = src_scope.FindVar(src_var_name);
-    if (src_var_name == "static_rnn_0.tmp_1") {
-      LOG(INFO) << "to get " << src_var_name << " from scope " << &src_scope
-                << " " << src_var;
+    if (is_backward && src_var == nullptr) {
+      return;
     }
-    PADDLE_ENFORCE(src_var != nullptr);
+    PADDLE_ENFORCE(src_var != nullptr, "%s is not found from src scope.", src_var_name);
+    LOG(INFO) << "geting " << src_var_name;
     auto &src_tensor = src_var->Get<framework::LoDTensor>();
 
     auto *dst_var = dst_scope->Var(dst_var_name);
@@ -218,12 +222,16 @@ class RecurrentBase : public framework::OperatorBase {
   static void AccessTensor(const framework::Scope &src_scope,
                            const std::string &src_var_name,
                            const framework::Scope &dst_scope,
-                           const std::string &dst_var_name, Callback callback) {
-    auto *src_var = src_scope.FindVar(src_var_name);
-    PADDLE_ENFORCE(src_var != nullptr);
-    auto &src_tensor = src_var->Get<framework::LoDTensor>();
+                           const std::string &dst_var_name, Callback callback,
+                           bool is_backward = false) {
     auto *dst_var = dst_scope.FindVar(dst_var_name);
-    PADDLE_ENFORCE(dst_var != nullptr);
+    if (is_backward && dst_var == nullptr) {
+      return;
+    }
+    auto *src_var = src_scope.FindVar(src_var_name);
+    PADDLE_ENFORCE(src_var != nullptr, "%s is not found.", src_var_name);
+    auto &src_tensor = src_var->Get<framework::LoDTensor>();
+    PADDLE_ENFORCE(dst_var != nullptr, "%s is not found.", dst_var_name);
     auto *dst_tensor = dst_var->GetMutable<framework::LoDTensor>();
     callback(src_tensor, dst_tensor);
   }
@@ -247,8 +255,19 @@ class RecurrentOp : public RecurrentBase {
 
     framework::Executor executor(place);
     auto *block = Attr<framework::BlockDesc *>(kStepBlock);
-
     auto *program = block->Program();
+
+    LOG(INFO) << "recurrent op init state ";
+    for (auto var : Inputs(kInitialStates)) {
+      LOG(INFO) << "input " << var;
+    }
+
+    LOG(INFO) << "recurrent op outputs ";
+    for (auto var : InputVars()) {
+      LOG(INFO) << "output " << var;
+    }
+
+    LOG(INFO) << "-----";
 
     for (size_t i = 0; i < seq_len; ++i) {
       size_t seq_offset = reverse ? seq_len - i - 1 : i;
@@ -270,19 +289,37 @@ class RecurrentOp : public RecurrentBase {
 
       LOG(INFO) << "running step " << i;
 
+      /*
+      for (auto var : block->LocalVarNames()) {
+        LOG(INFO) << "create tmp var " << var;
+        cur_scope.Var(var)->GetMutable<framework::LoDTensor>();
+      }
+       */
+
+      for (auto state : Attr<std::vector<std::string>>(kStates)) {
+        LOG(INFO) << "state " << state;
+      }
+
       if (i == 0) {
+        /*
+        for (auto state : Attr<std::vector<std::string>>(kStates)) {
+          cur_scope.Var(state)->GetMutable<framework::LoDTensor>();
+        }
+         */
         LOG(INFO) << "Link tensor from parent " << &scope << " to "
                   << &cur_scope;
         auto *var = scope.FindVar("static_rnn_0.tmp_1");
-        LOG(INFO) << "< get the static_rnn_0@tmp_1 from pre " << &scope << " "
+        LOG(INFO) << "< get the static_rnn_0.tmp_1 from pre " << &scope << " "
                   << var;
 
         // Link initial states  --> ex_states
+        LOG(INFO) << "link initial state from " << Input(kInitialStates) << " to " << Attr<std::vector<std::string>>(kExStates).front();
         LinkTensor(scope, Inputs(kInitialStates), &cur_scope,
                    Attr<std::vector<std::string>>(kExStates));
         var = cur_scope.FindVar("static_rnn_0.tmp_1");
         LOG(INFO) << "> get the static_rnn_0.tmp_1 from cur " << &cur_scope
                   << " " << var;
+        //LOG(INFO) << framework::GenScopeTreeDebugInfo(&cur_scope);
       } else {
         auto &ex_scope = scopes.ExScope();
         // Link ex_scope::state --> cur_scope::ex_state
@@ -291,6 +328,7 @@ class RecurrentOp : public RecurrentBase {
         auto *var = ex_scope.FindVar("static_rnn_0.tmp_1");
         LOG(INFO) << "< get the static_rnn_0.tmp_1 from pre " << &ex_scope
                   << " " << var;
+        LOG(INFO) << "link pre state from " << Attr<std::vector<std::string>>(kStates).front() << " to " << Attr<std::vector<std::string>>(kExStates).front();
         LinkTensor(ex_scope, Attr<std::vector<std::string>>(kStates),
                    &cur_scope, Attr<std::vector<std::string>>(kExStates));
         var = cur_scope.FindVar("static_rnn_0.tmp_1");
@@ -332,6 +370,7 @@ class RecurrentOp : public RecurrentBase {
  private:
   StepScopes CreateStepScopes(const framework::Scope &scope,
                               size_t seq_len) const {
+    LOG(INFO) << "is train " << Attr<bool>(kIsTrain);
     auto *var = scope.FindVar(Output(kStepScopes));
     PADDLE_ENFORCE(var != nullptr);
     return StepScopes(scope, var->GetMutable<StepScopeVar>(),
@@ -363,10 +402,18 @@ class RecurrentGradOp : public RecurrentBase {
     platform::DeviceContextPool &pool = platform::DeviceContextPool::Instance();
     auto &dev_ctx = *pool.Get(place);
 
+    LOG(INFO) << "block local names " << block->LocalVarNames().size();
+    LOG(INFO) << "block all var " << block->AllVars().size();
+    LOG(INFO) << "block all ops " << block->OpSize();
+
     for (size_t step_id = 0; step_id < seq_len; ++step_id) {
       size_t seq_offset = reverse ? step_id : seq_len - step_id - 1;
       VLOG(3) << "Recurrent backward operate at the time step " << seq_offset;
       auto &cur_scope = scopes.CurScope();
+      for (auto var : block->AllVars()) {
+        LOG(INFO) << "create tmp var " << var->Name();
+        cur_scope.Var(var->Name());
+      }
       // Link outside::output_grads --> inside::output_grads
       //   inside::output_grad = outside::output_grad[seq_offset:seq_offset+1]
       LinkTensorWithCallback(
@@ -376,7 +423,8 @@ class RecurrentGradOp : public RecurrentBase {
             auto dims = framework::vectorize(inside->dims());
             dims.erase(dims.begin());
             inside->Resize(framework::make_ddim(dims));
-          });
+          },
+          true /*is_backward*/);
       auto og_set = List2Set(Inputs(kOutputGrads));
 
       if (VLOG_IS_ON(10)) {
@@ -485,7 +533,8 @@ class RecurrentGradOp : public RecurrentBase {
 
             auto dst = outside->Slice(seq_offset, seq_offset + 1);
             framework::TensorCopy(inside, place, dev_ctx, &dst);
-          });
+          },
+          true /*is_backward*/);
       VLOG(5) << "Link outside gradient finished ";
 
       if (step_id + 1 == seq_len) {  // at_end
@@ -498,7 +547,8 @@ class RecurrentGradOp : public RecurrentBase {
               outside->Resize(inside.dims());
               outside->mutable_data(place, inside.type());
               framework::TensorCopy(inside, place, dev_ctx, outside);
-            });
+            },
+            true /*is_backward*/);
         VLOG(5) << "Link initialize state gradient finished ";
       }
       scopes.Next();
@@ -639,10 +689,8 @@ class RecurrentGradOpShapeInference : public framework::InferShapeBase {
     std::vector<std::string> input{kInputs, kInitialStates};
     std::vector<std::string> output{kOutputs};
     for (auto &s : input) {
+      // NOTE(zcd): In some case, some of kInputs doesn't have gradient.
       PADDLE_ENFORCE(ctx->HasInputs(s));
-      PADDLE_ENFORCE(ctx->HasOutputs(framework::GradVarName(s)),
-                     "Cannot find the gradient variable %s",
-                     framework::GradVarName(s));
     }
     for (auto &s : output) {
       PADDLE_ENFORCE(ctx->HasInputs(s));
