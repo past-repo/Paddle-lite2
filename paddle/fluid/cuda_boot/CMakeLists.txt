@@ -1,0 +1,1 @@
+nv_test(cuda_basic SRCS test_main.cu DEPS enforce)
